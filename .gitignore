@@ -3,6 +3,7 @@ __pycache__
 
 db.sqlite3
 .venv
+.env
 # dependencies
 /node_modules
 vendor/

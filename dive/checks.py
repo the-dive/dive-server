@@ -1,16 +1,23 @@
 import re
 from typing import List
 from django.core.checks import register
-from django.core.checks.messages import CheckMessage, DEBUG, INFO, WARNING, ERROR
+from django.core.checks.messages import (
+    CheckMessage,
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
+)
 from django.conf import settings
 
 from mypy import api
 
 
-# The check framework is used for multiple different kinds of checks. As such, errors
-# and warnings can originate from models or other django objects. The `CheckMessage`
-# requires an object as the source of the message and so we create a temporary object
-# that simply displays the file and line number from mypy (i.e. "location")
+# The check framework is used for multiple different kinds of checks. As such,
+# errors and warnings can originate from models or other django objects. The
+# `CheckMessage` requires an object as the source of the message and so we
+# create a temporary object that simply displays the file and line number from
+# mypy (i.e. "location")
 class MyPyErrorLocation:
     def __init__(self, location):
         self.location = location
@@ -23,10 +30,10 @@ class MyPyErrorLocation:
 def mypy(app_configs, **kwargs) -> List:
     print("Performing mypy checks...\n")
 
-    # By default run mypy against the whole database everytime checks are performed.
-    # If performance is an issue then `app_configs` can be inspected and the scope 
-    # of the mypy check can be restricted
-    mypy_args = [settings.BASE_DIR]
+    # By default run mypy against the whole database everytime checks are
+    # performed. If performance is an issue then `app_configs` can be inspected
+    # and the scope of the mypy check can be restricted
+    # mypy_args = [settings.BASE_DIR]
     results = api.run([str(settings.BASE_DIR)])
     error_messages = results[0]
 
@@ -56,6 +63,8 @@ def mypy(app_configs, **kwargs) -> List:
         else:
             print(f"Unrecognized mypy level: {mypy_level}")
 
-        errors.append(CheckMessage(level, message, obj=MyPyErrorLocation(location)))
+        errors.append(
+            CheckMessage(level, message, obj=MyPyErrorLocation(location))
+        )
 
     return errors

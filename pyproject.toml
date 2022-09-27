@@ -5,7 +5,7 @@ description = "Application server for DIVE"
 authors = ["Bibek Pandey <bewakepandey@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "3.10.6"
+python = "3.10.7"
 Django = "^4.1.1"
 djangorestframework = "^3.13.1"
 
