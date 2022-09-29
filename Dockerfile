@@ -1,4 +1,4 @@
-FROM python:3.10.7 as base
+FROM python:3.10.6 as base
 MAINTAINER togglecorp dev@togglecorp.com
 
 WORKDIR /code
@@ -15,4 +15,3 @@ RUN apt update -y \
     && pip uninstall -y poetry virtualenv-clone virtualenv \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
-
