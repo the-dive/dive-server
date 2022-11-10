@@ -1,6 +1,8 @@
 FROM python:3.10.6 as base
 MAINTAINER togglecorp dev@togglecorp.com
 
+ENV PYTHONUNBUFFERED 1
+
 WORKDIR /code
 
 COPY . /code/

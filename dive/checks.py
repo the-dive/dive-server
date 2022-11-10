@@ -63,8 +63,6 @@ def mypy(app_configs, **kwargs) -> List:
         else:
             print(f"Unrecognized mypy level: {mypy_level}")
 
-        errors.append(
-            CheckMessage(level, message, obj=MyPyErrorLocation(location))
-        )
+        errors.append(CheckMessage(level, message, obj=MyPyErrorLocation(location)))
 
     return errors
