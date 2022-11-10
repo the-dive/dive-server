@@ -1,6 +1,6 @@
 ## Setting up Local Development
 
-Install [pyenv](https://github.com/pyenv/pyenv) and  [poetry](https://github.com/python-poetry/poetry) 
+Install [pyenv](https://github.com/pyenv/pyenv) and  [poetry](https://github.com/python-poetry/poetry)
 
 Install python version in `pyproject.toml` which is `3.10.6`:
 ```
@@ -9,6 +9,11 @@ pyenv install 3.10.6
 Install dependencies:
 ```
 poetry install
+```
+
+Copy .env.default file to .env and override there.
+```
+cp .env.default .env
 ```
 
 Also install [flake8](https://github.com/PyCQA/flake8) locally.

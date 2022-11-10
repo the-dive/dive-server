@@ -11,25 +11,41 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
+import environ
 from pathlib import Path
-from typing import List
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 APPS_DIR = BASE_DIR / 'apps'
 
+env = environ.Env(
+    DEBUG=(bool, True),
+    SECRET_KEY=(str),
+    DJANGO_ALLOWED_HOST=(str, '*'),
+    POSTGRES_NAME=(str, 'postgres'),
+    POSTGRES_USER=(str, 'postgres'),
+    POSTGRES_PWD=(str, 'postgres'),
+    POSTGRES_HOST=(str, 'db'),
+    POSTGRES_PORT=(int, 5432),
+    TIME_ZONE=(str, 'Asia/Kathmandu'),
+    # Static, Media configs
+    DJANGO_STATIC_URL=(str, '/static/'),
+    DJANGO_MEDIA_URL=(str, '/media/'),
+    DJANGO_STATIC_ROOT=(str, os.path.join(BASE_DIR, "staticfiles")),
+    DJANGO_MEDIA_ROOT=(str, os.path.join(BASE_DIR, "media")),
+)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-kat5%w_0j0p9%(654qej#hgdfq=t)ovk0f66^$l@z=3s6=sa7x'  # noqa
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS: List[str] = []
+ALLOWED_HOSTS = ['server', env('DJANGO_ALLOWED_HOST')]
 
 
 # Application definition
@@ -81,12 +97,12 @@ WSGI_APPLICATION = 'dive.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ['DATABASE_NAME'],
-        'USER': os.environ['DATABASE_USER'],
-        'PASSWORD': os.environ['DATABASE_PASSWORD'],
-        'HOST': os.environ['DATABASE_HOSTNAME'],
-        'PORT': os.environ['DATABASE_PORT'],
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("POSTGRES_NAME"),
+        "USER": env("POSTGRES_USER"),
+        "PASSWORD": env("POSTGRES_PWD"),
+        "HOST": env("POSTGRES_HOST"),
+        "PORT": env("POSTGRES_PORT"),
     }
 }
 
@@ -115,7 +131,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = env('TIME_ZONE')
 
 USE_I18N = True
 
@@ -125,7 +141,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = env('DJANGO_STATIC_URL')
+MEDIA_URL = env('DJANGO_MEDIA_URL')
+STATIC_ROOT = env('DJANGO_STATIC_ROOT')
+MEDIA_ROOT = env('DJANGO_MEDIA_ROOT')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
