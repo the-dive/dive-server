@@ -9,6 +9,7 @@ class Dataset(BaseModel, NamedModelMixin):
         PENDING = "pending", _("Pending")
         UPLOADED = "uploaded", _("Uploaded")
         EXTRACTED = "extracted", _("Extracted")
+        ERRORED = "errored", _("Errored")
 
     file_url = models.TextField()
     file_size_bytes = models.PositiveIntegerField()
