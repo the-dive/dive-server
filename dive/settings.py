@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 import environ
 from pathlib import Path
+import django
+from django.utils.encoding import force_str
+
+django.utils.encoding.force_text = force_str
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,6 +54,11 @@ ALLOWED_HOSTS = ["server", env("DJANGO_ALLOWED_HOST")]
 
 # Application definition
 
+LOCAL_APPS = [
+    "apps.file",
+    "apps.core",
+]
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -57,12 +66,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "apps.core",
-]
+    "graphene_django",
+    "graphene_graphiql_explorer",
+    "corsheaders",
+] + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -149,3 +161,53 @@ MEDIA_ROOT = env("DJANGO_MEDIA_ROOT")
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_URLS_REGEX = r"(^/api/.*$)|(^/media/.*$)|(^/graphql/$)"
+CORS_ALLOW_METHODS = (
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
+
+CORS_ALLOW_HEADERS = (
+    "accept",
+    "accept-encoding",
+    "accept-language",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "sentry-trace",
+)
+
+
+GRAPHENE = {
+    "ATOMIC_MUTATIONS": True,
+    "SCHEMA": "dive.schema.schema",
+    "SCHEMA_OUTPUT": "schema.json",
+    "SCHEMA_INDENT": 2,
+    "MIDDLEWARE": [],
+}
+
+GRAPHENE_DJANGO_EXTRAS = {
+    "DEFAULT_PAGINATION_CLASS": "graphene_django_extras.paginations.PageGraphqlPagination",
+    "DEFAULT_PAGE_SIZE": 20,
+    "MAX_PAGE_SIZE": 50,
+}
+
+
+GRAPHENE_NODES_WHITELIST = (
+    # __ double underscore nodes
+    "__schema",
+    "__type",
+    "__typename",
+    "file",
+    "files",
+)
