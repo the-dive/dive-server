@@ -8,6 +8,8 @@ class File(BaseModel):
     class Type(models.TextChoices):
         EXCEL = "excel", _("Excel")
         CSV = "csv", _("Csv")
+        JSON = "json", _("Json")
+        TEXT = "text", _("Text")
 
     file_type = models.CharField(
         max_length=20,
@@ -15,5 +17,5 @@ class File(BaseModel):
         verbose_name=_("File type"),
     )
     file = models.FileField(
-        verbose_name=_("File"), max_length=255, upload_to="import_file/"
+        verbose_name=_("File"), max_length=255, upload_to="imported_files/"
     )

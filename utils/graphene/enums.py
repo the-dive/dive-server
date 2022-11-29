@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 import graphene
 from django_enumfield import enum
@@ -9,7 +9,7 @@ from django.contrib.postgres.fields import ArrayField
 from utils.common import to_camelcase
 
 
-def enum_description(v: enum.Enum) -> Union[str, None]:
+def enum_description(v: enum.Enum) -> Optional[str]:
     try:
         return v.label
     except AttributeError:
