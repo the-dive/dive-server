@@ -8,7 +8,6 @@ from django.utils.translation import gettext_lazy as _
 from graphene_file_upload.django import FileUploadGraphQLView
 from utils.graphene.context import GQLContext
 from django.conf.urls.static import static
-from django.conf.urls.i18n import i18n_patterns
 
 
 class CustomGraphQLView(FileUploadGraphQLView):
@@ -35,9 +34,9 @@ class CustomGraphQLView(FileUploadGraphQLView):
 
 CustomGraphQLView.graphiql_template = "graphene_graphiql_explorer/graphiql.html"
 
-urlpatterns = i18n_patterns(
+urlpatterns = [
     path("admin/", admin.site.urls),
-)
+]
 
 urlpatterns += [
     path("graphiql/", csrf_exempt(CustomGraphQLView.as_view(graphiql=True))),
