@@ -1,9 +1,9 @@
 import json
+import os
 
 from graphene_file_upload.django.testing import GraphQLFileUploadTestCase
 
-
-from django.core.files.temp import NamedTemporaryFile
+from django.conf import settings
 
 from utils.graphene.tests import GraphQLTestCase
 
@@ -30,19 +30,18 @@ class TestFileMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
         self.variables = {
             "data": {
                 "file": None,
-                "fileType": File.Type.EXCEL,
+                "fileType": self.genum(File.Type.EXCEL),
             }
         }
         self.user = UserFactory.create()
         self.force_login(self.user)
+        path = os.path.join(settings.TEST_DIR, "document")
+        self.file = os.path.join(path, "test1.xlsx")
         super().setUp()
 
     def test_file_upload(self):
 
-        file_text = b"fake data"
-        with NamedTemporaryFile() as t_file:
-            t_file.write(file_text)
-            t_file.seek(0)
+        with open(self.file, "rb") as t_file:
             response = self.client.post(
                 "/graphql/",
                 data={

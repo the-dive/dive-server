@@ -32,6 +32,7 @@ env = environ.Env(
     POSTGRES_PWD=(str, "postgres"),
     POSTGRES_HOST=(str, "db"),
     POSTGRES_PORT=(int, 5432),
+    REDIS_URL=(str, "redis://redis:6379/0"),
     TIME_ZONE=(str, "Asia/Kathmandu"),
     # Static, Media configs
     DJANGO_STATIC_URL=(str, "/static/"),
@@ -210,4 +211,12 @@ GRAPHENE_NODES_WHITELIST = (
     "__typename",
     "file",
     "files",
+    "dataset",
+    "datasets",
 )
+
+CELERY_TIMEZONE = env("TIME_ZONE")
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+TEST_DIR = os.path.join(BASE_DIR, "dive/test_files")
