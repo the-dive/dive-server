@@ -45,5 +45,7 @@ def create_dataset_and_table(sender, instance, created, **kwargs):
             table_data = {
                 "dataset": dataset,
                 "name": os.path.basename(instance.file.name),
+                "created_by": instance.created_by,
+                "modified_by": instance.modified_by,
             }
             Table.objects.create(**table_data)

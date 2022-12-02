@@ -26,7 +26,6 @@ class Dataset(BaseModel, NamedModelMixin):
 class Table(BaseModel, NamedModelMixin):
     class TableStatus(models.TextChoices):
         PENDING = "pending", _("Pending")
-        UPLOADED = "uploaded", _("Uploaded")
         EXTRACTED = "extracted", _("Extracted")
 
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
@@ -38,6 +37,8 @@ class Table(BaseModel, NamedModelMixin):
     properties = models.JSONField(default=dict)
     is_added_to_workspace = models.BooleanField(default=False)
     extra_data = models.JSONField(default=dict)
+    has_errored = models.BooleanField(default=False)
+    error = models.TextField(null=True, blank=True)
 
 
 class Column(BaseModel, NamedModelMixin):
