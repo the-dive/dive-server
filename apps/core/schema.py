@@ -25,9 +25,22 @@ class TableType(DjangoObjectType):
 class DatasetType(DjangoObjectType):
     class Meta:
         model = Dataset
-        fields = "__all__"
+        fields = (
+            "id",
+            "name",
+            "status",
+        )
+        skip_registry = True
 
     tables = DjangoListField(TableType)
+    file = graphene.ID(source="file_id", required=True)
+    status_display = EnumDescription(source="get_status_display")
+
+
+class DatasetDetailType(DatasetType):
+    class Meta:
+        model = Dataset
+        fields = "__all__"
 
 
 class DatasetListType(CustomDjangoListObjectType):
@@ -37,7 +50,7 @@ class DatasetListType(CustomDjangoListObjectType):
 
 
 class Query(graphene.ObjectType):
-    dataset = DjangoObjectField(DatasetType)
+    dataset = DjangoObjectField(DatasetDetailType)
     datasets = DjangoPaginatedListObjectField(
         DatasetListType,
         pagination=PageGraphqlPagination(page_size_query_param="pageSize"),

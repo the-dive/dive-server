@@ -19,3 +19,6 @@ class File(BaseModel):
     file = models.FileField(
         verbose_name=_("File"), max_length=255, upload_to="imported_files/"
     )
+    file_size = models.PositiveIntegerField(
+        verbose_name=_("File size"),
+    )

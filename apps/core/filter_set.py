@@ -8,4 +8,4 @@ class DatasetFilter(django_filters.FilterSet):
 
     class Meta:
         model = Dataset
-        fields = ()
+        fields = ("search",)
