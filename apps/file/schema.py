@@ -19,6 +19,17 @@ class FileType(DjangoObjectType):
         )
 
 
+class FileDetailType(
+    # -- Start File Scopped Entities
+    # -- End File Scopped Entities
+    FileType
+):
+    class Meta:
+        model = File
+        skip_registry = True
+        fields = "__all__"
+
+
 class FileListType(CustomDjangoListObjectType):
     class Meta:
         model = File
@@ -26,7 +37,7 @@ class FileListType(CustomDjangoListObjectType):
 
 
 class Query(graphene.ObjectType):
-    file = DjangoObjectField(FileType)
+    file = DjangoObjectField(FileDetailType)
     files = DjangoPaginatedListObjectField(
         FileListType, pagination=PageGraphqlPagination(page_size_query_param="pageSize")
     )

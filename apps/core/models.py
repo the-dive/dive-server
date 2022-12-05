@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from dive.base_models import BaseModel, NamedModelMixin
+from apps.file.models import File
 
 
 class Dataset(BaseModel, NamedModelMixin):
@@ -10,8 +11,7 @@ class Dataset(BaseModel, NamedModelMixin):
         UPLOADED = "uploaded", _("Uploaded")
         EXTRACTED = "extracted", _("Extracted")
 
-    file_url = models.TextField()
-    file_size_bytes = models.PositiveIntegerField()
+    file = models.ForeignKey(File, on_delete=models.SET_NULL, null=True)
     status = models.CharField(
         max_length=50,
         choices=DatasetStatus.choices,
