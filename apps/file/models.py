@@ -22,3 +22,8 @@ class File(BaseModel):
     file_size = models.PositiveIntegerField(
         verbose_name=_("File size"),
     )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # To enforce model CharField validation for chocies.
+        # Turns out that save() alone does not do any validations on choice fields
+        super().save(*args, **kwargs)

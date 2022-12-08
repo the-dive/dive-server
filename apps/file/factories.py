@@ -11,3 +11,4 @@ class FileFactory(BaseModelFactory):
 
     file = factory.django.FileField(filename="test.xlsx")
     file_type = fuzzy.FuzzyChoice(File.Type)
+    file_size = fuzzy.FuzzyInteger(low=10)

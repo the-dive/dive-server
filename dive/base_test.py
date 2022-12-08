@@ -48,14 +48,18 @@ class BaseAPITestCase(APITestCase):
             pass
 
 
-def assert_count_increment(Model, increment_count=1):
+def assert_object_created(Model, count=1):
+    """
+    Decorator for test cases to assert <count> objects of type Model are caeated
+    """
+
     def wrapper(function):
         def new_function(*args, **kwargs):
             initial_count = Model.objects.count()
             ret = function(*args, **kwargs)
             assert (
-                Model.objects.count() == initial_count + increment_count
-            ), f"There must be {increment_count} more {Model.__name__} created"  # noqa
+                Model.objects.count() == initial_count + count
+            ), f"There must be {count} more {Model.__name__} created"  # noqa
             return ret
 
         return new_function

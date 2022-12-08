@@ -16,7 +16,7 @@ from apps.core.filter_set import DatasetFilter
 class TableType(DjangoObjectType):
     class Meta:
         model = Table
-        only_fields = ("id", "name", "status")
+        only_fields = ("id", "name", "status", "is_added_to_workspace")
         skip_registry = True
 
     status_display = EnumDescription(source="get_status_display")
