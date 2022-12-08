@@ -6,12 +6,14 @@ class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User,
+        null=True,
         related_name="%(class)s_created",
         on_delete=models.CASCADE,
     )
     modified_at = models.DateTimeField(auto_now=True)
     modified_by = models.ForeignKey(
         User,
+        null=True,
         related_name="%(class)s_modified",
         on_delete=models.CASCADE,
     )

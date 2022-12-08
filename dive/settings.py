@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 import environ
 from pathlib import Path
-import django
+import django.utils.encoding
 from django.utils.encoding import force_str
 
 django.utils.encoding.force_text = force_str

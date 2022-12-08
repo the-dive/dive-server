@@ -8,11 +8,9 @@ from utils.graphene.error_types import (
 
 from apps.file.schema import FileType
 from apps.file.serializers import FileSerializer
-from apps.file.enums import FileTypeEnum
 
 
 class CreateFileInputType(graphene.InputObjectType):
-    file_type = graphene.Field(FileTypeEnum, required=True)
     file = Upload(required=True)
 
 

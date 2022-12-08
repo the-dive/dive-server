@@ -1,10 +1,37 @@
 import os
 import pandas as pd
+from django.db import transaction
 
+from apps.file.models import File
 from apps.core.models import Dataset, Table
+from utils.common import get_file_extension
 
 
-def create_dataset_table(file):
+def process_excel_file(dataset: Dataset):
+    pd_excel = pd.ExcelFile(dataset.file.file.path)
+    sheets = [sheet for sheet in pd_excel.sheet_names]
+    with transaction.atomic():
+        for sheet in sheets:
+            table_data = {
+                "dataset": dataset,
+                "name": sheet,
+                "created_by": dataset.file.created_by,
+                "modified_by": dataset.file.modified_by,
+            }
+            Table.objects.create(**table_data)
+
+
+def process_csv_file(dataset: Dataset):
+    table_data = {
+        "dataset": dataset,
+        "name": os.path.basename(dataset.file.file.name),
+        "created_by": dataset.file.created_by,
+        "modified_by": dataset.file.modified_by,
+    }
+    Table.objects.create(**table_data)
+
+
+def create_dataset_and_tables(file: File) -> Dataset:
     dataset_data = {
         "created_by": file.created_by,
         "modified_by": file.modified_by,
@@ -13,23 +40,13 @@ def create_dataset_table(file):
     }
     dataset = Dataset.objects.create(**dataset_data)
     # Now process file and create associated table
-    extension = os.path.splitext(file.file.name)[1].replace(".", "")
+    extension = get_file_extension(file.file.name)
+
     if extension.lower() == "xlsx":
-        sheetname = pd.ExcelFile(file.file.path)
-        sheets = [sheet for sheet in sheetname.sheet_names]
-        for sheet in sheets:
-            table_data = {
-                "dataset": dataset,
-                "name": sheet,
-                "created_by": file.created_by,
-                "modified_by": file.modified_by,
-            }
-            Table.objects.create(**table_data)
+        process_excel_file(dataset)
     elif extension.lower() == "csv":
-        table_data = {
-            "dataset": dataset,
-            "name": os.path.basename(file.file.name),
-            "created_by": file.created_by,
-            "modified_by": file.modified_by,
-        }
-        Table.objects.create(**table_data)
+        process_csv_file(dataset)
+    else:
+        # TODO: Handle gracefully, or should we? because serializer already validates extension
+        raise Exception("Invalid file type")
+    return dataset
