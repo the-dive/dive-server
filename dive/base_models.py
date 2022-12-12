@@ -7,6 +7,7 @@ class BaseModel(models.Model):
     created_by = models.ForeignKey(
         User,
         null=True,
+        blank=True,
         related_name="%(class)s_created",
         on_delete=models.CASCADE,
     )
@@ -14,6 +15,7 @@ class BaseModel(models.Model):
     modified_by = models.ForeignKey(
         User,
         null=True,
+        blank=True,
         related_name="%(class)s_modified",
         on_delete=models.CASCADE,
     )

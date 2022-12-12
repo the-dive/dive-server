@@ -39,8 +39,6 @@ class FileSerializer(serializers.ModelSerializer):
         return file
 
     def create(self, validated_data):
-        validated_data["created_by"] = self.context["request"].user
-        validated_data["modified_by"] = self.context["request"].user
         # get the file and calculate the file size
         file = validated_data["file"]
         validated_data["file_size"] = file.size
