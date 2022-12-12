@@ -4,8 +4,7 @@ from rest_framework.exceptions import ValidationError
 from apps.file.models import File
 from utils.common import get_file_extension
 
-MAX_FILE_SIZE_MB = 10  # 10 MB limit
-MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+from dive.consts import MAX_FILE_SIZE_BYTES
 
 EXTENSION_FILETYPE_MAP = {
     "xlsx": File.Type.EXCEL,
@@ -42,7 +41,7 @@ class FileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["created_by"] = self.context["request"].user
         validated_data["modified_by"] = self.context["request"].user
-        # get the file and calulate the file size
+        # get the file and calculate the file size
         file = validated_data["file"]
         validated_data["file_size"] = file.size
         extension = get_file_extension(file.name)
