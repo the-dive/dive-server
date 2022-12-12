@@ -50,7 +50,7 @@ class BaseAPITestCase(APITestCase):
 
 def assert_object_created(Model, count=1):
     """
-    Decorator for test cases to assert <count> objects of type Model are caeated
+    Decorator for test cases to assert <count> objects of type Model are created
     """
 
     def wrapper(function):
