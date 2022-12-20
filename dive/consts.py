@@ -1,7 +1,7 @@
 MAX_FILE_SIZE_MB = 10  # 10 MB limit
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
-HEADERS = [
+TABLE_HEADER_LEVELS = [
     {
         "key": "1",
         "label": "One",

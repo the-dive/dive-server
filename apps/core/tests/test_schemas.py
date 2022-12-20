@@ -1,6 +1,6 @@
 from utils.graphene.tests import GraphQLTestCase
 
-from dive.consts import LANGUAGES, HAEADERS
+from dive.consts import LANGUAGES, TABLE_HEADER_LEVELS
 
 
 class GlobalPropertiesTestCase(GraphQLTestCase):
@@ -27,7 +27,8 @@ class GlobalPropertiesTestCase(GraphQLTestCase):
         """
         response = self.query_check(query)
         self.assertEqual(
-            len(response["data"]["properties"]["table"]["headers"]), len(HAEADERS)
+            len(response["data"]["properties"]["table"]["headers"]),
+            len(TABLE_HEADER_LEVELS),
         )
         self.assertEqual(
             len(response["data"]["properties"]["table"]["languages"]), len(LANGUAGES)
