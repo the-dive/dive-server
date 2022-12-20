@@ -1,3 +1,5 @@
+import pytz
+
 import graphene
 from graphene_django import DjangoObjectType, DjangoListField
 from graphene_django_extras import PageGraphqlPagination, DjangoObjectField
@@ -11,6 +13,7 @@ from apps.core.models import (
     Table,
 )
 from apps.core.filter_set import DatasetFilter
+from dive.consts import TABLE_HEADER_LEVELS, LANGUAGES
 
 
 class TableType(DjangoObjectType):
@@ -36,6 +39,9 @@ class DatasetType(DjangoObjectType):
     file = graphene.ID(source="file_id", required=True)
     status_display = EnumDescription(source="get_status_display")
 
+    def resolve_tables(self, info):
+        return Table.objects.filter(dataset=self.id)
+
 
 class DatasetDetailType(DatasetType):
     class Meta:
@@ -49,9 +55,67 @@ class DatasetListType(CustomDjangoListObjectType):
         filterset_class = DatasetFilter
 
 
+class KeyLabelType(graphene.ObjectType):
+    key = graphene.String()
+    label = graphene.String()
+
+
+class TablePropertiesType(graphene.ObjectType):
+    headers = graphene.List(KeyLabelType)
+    languages = graphene.List(KeyLabelType)
+    time_zones = graphene.List(KeyLabelType)
+
+    def resolve_headers(self, info):
+        output = []
+        for d in TABLE_HEADER_LEVELS:
+            output.append(
+                KeyLabelType(
+                    key=d["key"],
+                    label=d["label"],
+                )
+            )
+        return output
+
+    def resolve_languages(self, info):
+        output = []
+        for d in LANGUAGES:
+            output.append(
+                KeyLabelType(
+                    key=d[0],
+                    label=d[1],
+                )
+            )
+        return output
+
+    def resolve_time_zones(self, info):
+        timezones = pytz.all_timezones
+        data_list = []
+        for zone in timezones:
+            zone_split = zone.split("/")
+            data_list.append(
+                KeyLabelType(
+                    key=zone_split[1].lower() if len(zone_split) > 1 else zone.lower(),
+                    label=zone,
+                )
+            )
+        return data_list
+
+
+class PropertiesType(graphene.ObjectType):
+    table = graphene.Field(TablePropertiesType)
+    # column = graphene.Field(ColumnPropertiesType)
+
+    def resolve_table(self, info):
+        return TablePropertiesType()
+
+
 class Query(graphene.ObjectType):
     dataset = DjangoObjectField(DatasetDetailType)
     datasets = DjangoPaginatedListObjectField(
         DatasetListType,
         pagination=PageGraphqlPagination(page_size_query_param="pageSize"),
     )
+    properties = graphene.Field(PropertiesType)
+
+    def resolve_properties(self, info):
+        return PropertiesType()

@@ -1,5 +1,6 @@
 name: build-push-image
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -36,6 +37,7 @@ jobs:
           POSTGRES_DB: ${{ matrix.database-name }}
           POSTGRES_USER: ${{ matrix.database-user }}
           POSTGRES_PASSWORD: ${{ matrix.database-password }}
+          POSTGRES_HOST: ${{ matrix.database-hostname}}
         ports:
           - 5432:5432
         # Set health checks to wait until postgres has started
@@ -45,11 +47,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_NAME: ${{ matrix.database-name }}
-      DATABASE_USER: ${{ matrix.database-user }}
-      DATABASE_PASSWORD: ${{ matrix.database-password }}
-      DATABASE_HOSTNAME: ${{ matrix.database-hostname }}
-      DATABASE_PORT: ${{ matrix.database-port }}
+      POSTGRES_DB: ${{ matrix.database-name }}
+      POSTGRES_USER: ${{ matrix.database-user }}
+      POSTGRES_PASSWORD: ${{ matrix.database-password }}
+      POSTGRES_HOST: ${{ matrix.database-hostname }}
+      POSTGRES_PORT: ${{ matrix.database-port }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
