@@ -13,7 +13,7 @@ from apps.core.models import (
     Table,
 )
 from apps.core.filter_set import DatasetFilter
-from dive.consts import HAEADERS, LANGUAGES
+from dive.consts import HEADERS, LANGUAGES
 
 
 class TableType(DjangoObjectType):
@@ -67,7 +67,7 @@ class TablePropertiesType(graphene.ObjectType):
 
     def resolve_headers(self, info):
         output = []
-        for d in HAEADERS:
+        for d in HEADERS:
             output.append(
                 KeyLabelType(
                     key=d["key"],
@@ -81,8 +81,8 @@ class TablePropertiesType(graphene.ObjectType):
         for d in LANGUAGES:
             output.append(
                 KeyLabelType(
-                    key=d["key"],
-                    label=d["label"],
+                    key=d[0],
+                    label=d[1],
                 )
             )
         return output
