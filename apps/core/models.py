@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from dive.base_models import BaseModel, NamedModelMixin
 from apps.file.models import File
+from utils.common import ColumnTypes
 
 
 class Dataset(BaseModel, NamedModelMixin):
@@ -35,6 +36,7 @@ class Table(BaseModel, NamedModelMixin):
         default=TableStatus.PENDING,
     )
     properties = models.JSONField(default=dict)
+    preview_data = models.JSONField(blank=True, null=True)
     is_added_to_workspace = models.BooleanField(default=False)
     extra_data = models.JSONField(default=dict)
     has_errored = models.BooleanField(default=False)
@@ -42,16 +44,6 @@ class Table(BaseModel, NamedModelMixin):
 
 
 class Column(BaseModel, NamedModelMixin):
-    class ColumnTypes(models.TextChoices):
-        STRING = "string", _("String")
-        NUMBER = "number", _("Number")
-        INTEGER = "integer", _("Integer")
-        FLOATING = "floating", _("Floating")
-        DATE = "date", _("Date")
-        TIME = "time", _("Time")
-        DATETIME = "datetime", _("Date time")
-        LOCATION = "location", _("Location")
-
     class StatsStatus(models.TextChoices):
         PENDING = "pending", _("Pending")
         COMPLETED = "completed", _("Completed")

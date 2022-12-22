@@ -61,19 +61,7 @@ class TestDatasetMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
     @assert_object_created(Dataset, count=1)
     @assert_object_created(Table, count=SHEETS_COUNT_IN_TEST_EXCEL)
     def test_file_upload(self):
-        with open(self.file, "rb") as t_file:
-            response = self.client.post(
-                "/graphql/",
-                data={
-                    "operations": json.dumps(
-                        {"query": self.create_dataset, "variables": self.variables}
-                    ),
-                    "file": t_file,
-                    "map": json.dumps({"file": ["variables.data.file"]}),
-                },
-            )
-        content = response.json()
-        self.assertResponseNoErrors(response)
+        content = self.call_create_dataset_api()
         data = content["data"]["createDataset"]
         self.assertTrue(data["ok"], content)
         result = data["result"]
@@ -89,3 +77,18 @@ class TestDatasetMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
         for table in tables:
             for field in table_fields:
                 self.assertIsNotNone(table[field])
+
+    def call_create_dataset_api(self):
+        with open(self.file, "rb") as t_file:
+            response = self.client.post(
+                "/graphql/",
+                data={
+                    "operations": json.dumps(
+                        {"query": self.create_dataset, "variables": self.variables}
+                    ),
+                    "file": t_file,
+                    "map": json.dumps({"file": ["variables.data.file"]}),
+                },
+            )
+        self.assertResponseNoErrors(response)
+        return response.json()
