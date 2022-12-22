@@ -33,6 +33,16 @@ class TestDatasetQuery(GraphQLTestCase):
                 }
             }
         """
+        self.table_query = """
+            query GetTable($id: ID!) {
+                table(id: $id) {
+                    id
+                    name
+                    isAddedToWorkspace
+                    previewData
+                }
+            }
+        """
         super().setUp()
 
     def tearDown(self):
@@ -44,16 +54,8 @@ class TestDatasetQuery(GraphQLTestCase):
 
     def test_get_dataset(self):
         # Create dataset first
-        test_file = open(TEST_FILE_PATH, "rb")
         file_name = "test.xlsx"
-        file_obj = File.objects.create(
-            file_type=File.Type.EXCEL,
-            # NOTE: if the name argument is not passed in the following line,
-            # SuspiciousFileOperation will be raised by django as the file name
-            # will be /some/absolute/path.xlsx
-            file=File_(test_file, name=file_name),
-            file_size=os.path.getsize(TEST_FILE_PATH),
-        )
+        file_obj = self.create_file(file_name=file_name)
         dataset = create_dataset_and_tables(file_obj)
         content = self.query_check(
             self.dataset_query,
@@ -64,3 +66,36 @@ class TestDatasetQuery(GraphQLTestCase):
         assert data["name"] == file_name
         tables = data["tables"]
         assert len(tables) == SHEETS_COUNT_IN_TEST_EXCEL
+
+    def test_get_table(self):
+        file_obj = self.create_file()
+        dataset = create_dataset_and_tables(file_obj)
+        table = dataset.table_set.first()
+        content = self.query_check(
+            self.table_query,
+            variables={"id": table.pk},
+        )
+        table_resp = content["data"]["table"]
+        assert table_resp["name"] == table.name
+        preview_data = table_resp["previewData"]
+        assert "rows" in preview_data
+        assert "columns" in preview_data
+
+        assert len(preview_data["rows"]) > 0, "There should be some rows"
+
+        assert len(preview_data["columns"]) > 0, "There should be some cols"
+        for col in preview_data["columns"]:
+            assert "type" in col
+            assert "label" in col
+            assert "key" in col
+
+    def create_file(self, file_name="test.xlsx") -> File:
+        test_file = open(TEST_FILE_PATH, "rb")
+        return File.objects.create(
+            file_type=File.Type.EXCEL,
+            # NOTE: if the name argument is not passed in the following line,
+            # SuspiciousFileOperation will be raised by django as the file name
+            # will be /some/absolute/path.xlsx
+            file=File_(test_file, name=file_name),
+            file_size=os.path.getsize(TEST_FILE_PATH),
+        )

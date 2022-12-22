@@ -2,6 +2,7 @@ import pytz
 
 import graphene
 from graphene_django import DjangoObjectType, DjangoListField
+from graphene.types.generic import GenericScalar
 from graphene_django_extras import PageGraphqlPagination, DjangoObjectField
 
 from utils.graphene.types import CustomDjangoListObjectType
@@ -17,9 +18,11 @@ from dive.consts import TABLE_HEADER_LEVELS, LANGUAGES
 
 
 class TableType(DjangoObjectType):
+    preview_data = GenericScalar()
+
     class Meta:
         model = Table
-        only_fields = ("id", "name", "status", "is_added_to_workspace")
+        fields = ("id", "name", "status", "is_added_to_workspace", "preview_data")
         skip_registry = True
 
     status_display = EnumDescription(source="get_status_display")
@@ -116,6 +119,7 @@ class Query(graphene.ObjectType):
         pagination=PageGraphqlPagination(page_size_query_param="pageSize"),
     )
     properties = graphene.Field(PropertiesType)
+    table = DjangoObjectField(TableType)
 
     def resolve_properties(self, info):
         return PropertiesType()
