@@ -232,6 +232,18 @@ class BaseGrapheneMutation(graphene.Mutation):
         return cls.perform_mutate(root, info, **kwargs)
 
 
+class DiveMutationMixin(BaseGrapheneMutation):
+    @classmethod
+    def check_permissions(cls, *args, **kwargs):
+        return True
+
+    @classmethod
+    def perform_mutate(cls, root, info, **kwargs):
+        data = kwargs['data']
+        instance, errors = cls._save_item(data, info, **kwargs)
+        return cls(result=instance, errors=errors, ok=not errors)
+
+
 # override the default implementation
 graphene_django.rest_framework.serializer_converter.convert_serializer_field = (
     convert_serializer_field

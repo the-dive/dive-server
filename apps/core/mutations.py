@@ -5,10 +5,23 @@ from utils.graphene.error_types import (
     CustomErrorType,
     mutation_is_not_valid,
 )
+from utils.graphene.mutation import (
+    generate_input_type_for_serializer,
+    DiveMutationMixin,
+)
 
-from apps.core.schema import DatasetType
+from apps.core.schema import DatasetType, TableType
 from apps.file.serializers import FileSerializer, File
 from apps.file.utils import create_dataset_and_tables
+
+from .serializers import TableUpdateSerializer
+from .models import Table
+
+
+TableInputType = generate_input_type_for_serializer(
+    'TableInputType',
+    TableUpdateSerializer,
+)
 
 
 class CreateDatasetInputType(graphene.InputObjectType):
@@ -36,5 +49,18 @@ class CreateDataset(graphene.Mutation):
         return CreateDataset(result=dataset, errors=None, ok=True)
 
 
+class UpdateTable(DiveMutationMixin):
+    class Arguments:
+        data = TableInputType(required=True)
+        id = graphene.ID()
+
+    model = Table
+    serializer_class = TableUpdateSerializer
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+
 class Mutation:
     create_dataset = CreateDataset.Field()
+    update_table = UpdateTable.Field()

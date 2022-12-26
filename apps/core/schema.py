@@ -42,8 +42,9 @@ class DatasetType(DjangoObjectType):
     file = graphene.ID(source="file_id", required=True)
     status_display = EnumDescription(source="get_status_display")
 
-    def resolve_tables(self, info):
-        return Table.objects.filter(dataset=self.id)
+    @staticmethod
+    def resolve_tables(root, info, **kwargs):
+        return Table.objects.filter(dataset=root.id)
 
 
 class DatasetDetailType(DatasetType):
