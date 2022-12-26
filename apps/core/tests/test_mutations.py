@@ -12,6 +12,7 @@ from utils.graphene.tests import GraphQLTestCase
 from dive.factories import UserFactory
 from dive.base_test import assert_object_created
 from apps.core.models import Dataset, Table
+from apps.core.factories import DatasetFactory, TableFactory
 
 
 TEST_MEDIA_DIR = os.path.join(settings.TEST_DIR, "media")
@@ -92,3 +93,33 @@ class TestDatasetMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
             )
         self.assertResponseNoErrors(response)
         return response.json()
+
+
+@override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
+class TestTableMutation(GraphQLTestCase):
+    def test_add_to_workspace(self):
+        dataset = DatasetFactory.create(name="mydataset")
+        table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
+        mutate_query = """
+            mutation Mutation($tableId: ID! $input: TableInputType!) {
+                updateTable(id: $tableId data: $input) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                        isAddedToWorkspace
+                    }
+                }
+            }
+        """
+        resp_data = self.query_check(
+            mutate_query,
+            minput={"isAddedToWorkspace": True},
+            variables={"tableId": table.id},
+        )
+        content = resp_data["data"]["updateTable"]
+        assert content["ok"] is True
+        assert content["result"]["isAddedToWorkspace"] is True
+        table = Table.objects.get(id=table.id)
+        assert table.is_added_to_workspace is True
