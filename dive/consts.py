@@ -1,3 +1,5 @@
+import pytz
+
 MAX_FILE_SIZE_MB = 10  # 10 MB limit
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
@@ -209,4 +211,12 @@ LANGUAGES = [
     ("yo", "Yoruba"),
     ("za", "Zhuang"),
     ("zu", "Zulu"),
+]
+
+TIMEZONES = [
+    {
+        "key": zone_split[1].lower() if len(zone_split := zone.split("/")) > 1 else zone.lower(),
+        "label": zone
+    }
+    for zone in pytz.all_timezones
 ]

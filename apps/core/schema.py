@@ -1,5 +1,3 @@
-import pytz
-
 import graphene
 from graphene_django import DjangoObjectType, DjangoListField
 from graphene.types.generic import GenericScalar
@@ -14,7 +12,7 @@ from apps.core.models import (
     Table,
 )
 from apps.core.filter_set import DatasetFilter
-from dive.consts import TABLE_HEADER_LEVELS, LANGUAGES
+from dive.consts import TABLE_HEADER_LEVELS, LANGUAGES, TIMEZONES
 
 
 class TableType(DjangoObjectType):
@@ -22,7 +20,7 @@ class TableType(DjangoObjectType):
 
     class Meta:
         model = Table
-        fields = ("id", "name", "status", "is_added_to_workspace", "preview_data")
+        fields = ("id", "name", "status", "is_added_to_workspace", "preview_data", "properties")
         skip_registry = True
 
     status_display = EnumDescription(source="get_status_display")
@@ -92,17 +90,10 @@ class TablePropertiesType(graphene.ObjectType):
         return output
 
     def resolve_time_zones(self, info):
-        timezones = pytz.all_timezones
-        data_list = []
-        for zone in timezones:
-            zone_split = zone.split("/")
-            data_list.append(
-                KeyLabelType(
-                    key=zone_split[1].lower() if len(zone_split) > 1 else zone.lower(),
-                    label=zone,
-                )
-            )
-        return data_list
+        return [
+            KeyLabelType(key=tz["key"], label=tz["label"])
+            for tz in TIMEZONES
+        ]
 
 
 class PropertiesType(graphene.ObjectType):
