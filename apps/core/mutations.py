@@ -45,7 +45,6 @@ class CreateDataset(graphene.Mutation):
             return CreateDataset(errors=errors, ok=False)
         file_obj: File = serializer.save()
         dataset = create_dataset_and_tables(file_obj)
-        # TODO: send in background to extract
         return CreateDataset(result=dataset, errors=None, ok=True)
 
 
