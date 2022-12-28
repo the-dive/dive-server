@@ -157,4 +157,6 @@ class TestTableMutation(GraphQLTestCase):
         content = resp_data["data"]["updateTable"]
         assert content["ok"] is True
         table = Table.objects.get(id=table.id)
-        assert content["result"]["properties"]["headerLevel"] == valid_props["headerLevel"]
+        assert (
+            content["result"]["properties"]["headerLevel"] == valid_props["headerLevel"]
+        )

@@ -5,17 +5,11 @@ import numpy as np
 from .common import ColumnTypes
 
 
-PreviewResult = Union[
-    Tuple[dict, Optional[str]],
-    Tuple[Optional[dict], str]
-]
+PreviewResult = Union[Tuple[dict, Optional[str]], Tuple[Optional[dict], str]]
 
 ColumnObject = TypedDict(
-    'ColumnObject', {
-        "key": str,
-        "label": str,
-        "type": ColumnTypes
-    })
+    "ColumnObject", {"key": str, "label": str, "type": ColumnTypes}
+)
 
 
 def get_col_type_from_pd_type(pd_type):
@@ -29,15 +23,14 @@ def get_col_type_from_pd_type(pd_type):
     return ColumnTypes.STRING
 
 
-def extract_preview_data(xl: pd.ExcelFile, sheetname: str, table_properties=None) -> PreviewResult:
+def extract_preview_data(
+    xl: pd.ExcelFile, sheetname: str, table_properties=None
+) -> PreviewResult:
     df: pd.DataFrame = cast(pd.DataFrame, xl.parse(sheetname, nrows=50, header=1))
     df.replace({pd.NaT: None, np.nan: None}, inplace=True)
 
     # Store map of column index and type information
-    coltypes = {
-        i: get_col_type_from_pd_type(t)
-        for i, t in enumerate(df.dtypes)
-    }
+    coltypes = {i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)}
 
     df_dict = df.to_dict()
 

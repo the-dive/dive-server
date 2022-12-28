@@ -24,10 +24,19 @@ table_properties_schema = {
         },
         "treatTheseAsNa": {
             "type": ["string", "null"],
-        }
+        },
     },
     "required": ["headerLevel", "timezone", "language", "trimWhitespaces"],
 }
+
+
+def get_default_properties():
+    return {
+        "headerLevel": "1",
+        "timezone": "central",
+        "language": "en",
+        "trimWhitespaces": False,
+    }
 
 
 def validate_table_properties(properties: dict):

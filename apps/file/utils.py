@@ -27,7 +27,7 @@ def process_excel_file(dataset: Dataset):
                 "modified_by": dataset.file.modified_by,
                 "preview_data": preview_data or {},
                 "has_errored": err is not None,
-                "error": err or None
+                "error": err or None,
             }
             Table.objects.create(**table_data)
 

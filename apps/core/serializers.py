@@ -29,6 +29,6 @@ class TableUpdateSerializer(serializers.ModelSerializer):
     properties = TablePropertiesSerializer()
 
     class Meta:
-        fields = '__all__'
-        read_only_fields = ('status', 'preview_data', 'has_errored', 'error', 'dataset')
+        fields = "__all__"
+        read_only_fields = ("status", "preview_data", "has_errored", "error", "dataset")
         model = Table

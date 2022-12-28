@@ -19,6 +19,7 @@ class TablePropertiesType(graphene.ObjectType):
     """
     Type for table properties which is a json field in database
     """
+
     header_level = graphene.String()
     timezone = graphene.String()
     language = graphene.String()
@@ -52,7 +53,14 @@ class TableType(DjangoObjectType):
 
     class Meta:
         model = Table
-        fields = ("id", "name", "status", "is_added_to_workspace", "preview_data", "properties")
+        fields = (
+            "id",
+            "name",
+            "status",
+            "is_added_to_workspace",
+            "preview_data",
+            "properties",
+        )
         skip_registry = True
 
     status_display = EnumDescription(source="get_status_display")
@@ -99,6 +107,7 @@ class TablePropertiesOptionsType(graphene.ObjectType):
     Type for table properties options.
     For example: table properties has following keys: headerLevel, time_zone, etc
     """
+
     header_levels = graphene.List(KeyLabelType)
     languages = graphene.List(KeyLabelType)
     timezones = graphene.List(KeyLabelType)
@@ -126,10 +135,7 @@ class TablePropertiesOptionsType(graphene.ObjectType):
         return output
 
     def resolve_timezones(self, info):
-        return [
-            KeyLabelType(key=tz["key"], label=tz["label"])
-            for tz in TIMEZONES
-        ]
+        return [KeyLabelType(key=tz["key"], label=tz["label"]) for tz in TIMEZONES]
 
 
 class PropertiesOptionsType(graphene.ObjectType):

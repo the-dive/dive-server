@@ -19,7 +19,7 @@ from .models import Table
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
-    'TablePropertiesInputType',
+    "TablePropertiesInputType",
     TablePropertiesSerializer,
 )
 

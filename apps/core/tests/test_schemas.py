@@ -31,5 +31,6 @@ class GlobalPropertiesTestCase(GraphQLTestCase):
             len(TABLE_HEADER_LEVELS),
         )
         self.assertEqual(
-            len(response["data"]["propertiesOptions"]["table"]["languages"]), len(LANGUAGES)
+            len(response["data"]["propertiesOptions"]["table"]["languages"]),
+            len(LANGUAGES),
         )
