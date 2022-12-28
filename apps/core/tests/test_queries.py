@@ -57,10 +57,7 @@ class TestDatasetQuery(GraphQLTestCase):
         file_name = "test.xlsx"
         file_obj = self.create_file(file_name=file_name)
         dataset = create_dataset_and_tables(file_obj)
-        content = self.query_check(
-            self.dataset_query,
-            variables={"id": dataset.pk}
-        )
+        content = self.query_check(self.dataset_query, variables={"id": dataset.pk})
         data = content["data"]["dataset"]
         assert data["id"] == str(dataset.pk)
         assert data["name"] == file_name

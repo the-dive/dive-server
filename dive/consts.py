@@ -215,8 +215,10 @@ LANGUAGES = [
 
 TIMEZONES = [
     {
-        "key": zone_split[1].lower() if len(zone_split := zone.split("/")) > 1 else zone.lower(),
-        "label": zone
+        "key": zone_split[1].lower()
+        if len(zone_split := zone.split("/")) > 1
+        else zone.lower(),
+        "label": zone,
     }
     for zone in pytz.all_timezones
 ]
