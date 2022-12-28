@@ -4,12 +4,12 @@ from dive.consts import LANGUAGES, TABLE_HEADER_LEVELS
 
 
 class GlobalPropertiesTestCase(GraphQLTestCase):
-    def test_global_properties(self):
+    def test_global_properties_options(self):
         query = """
             query MyQuery {
-                properties {
+                propertiesOptions {
                     table {
-                        headers {
+                        headerLevels {
                             key
                             label
                         }
@@ -17,7 +17,7 @@ class GlobalPropertiesTestCase(GraphQLTestCase):
                             key
                             label
                         }
-                        timeZones {
+                        timezones {
                             key
                             label
                         }
@@ -27,9 +27,9 @@ class GlobalPropertiesTestCase(GraphQLTestCase):
         """
         response = self.query_check(query)
         self.assertEqual(
-            len(response["data"]["properties"]["table"]["headers"]),
+            len(response["data"]["propertiesOptions"]["table"]["headerLevels"]),
             len(TABLE_HEADER_LEVELS),
         )
         self.assertEqual(
-            len(response["data"]["properties"]["table"]["languages"]), len(LANGUAGES)
+            len(response["data"]["propertiesOptions"]["table"]["languages"]), len(LANGUAGES)
         )

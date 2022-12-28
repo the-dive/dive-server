@@ -82,6 +82,8 @@ class TestDatasetQuery(GraphQLTestCase):
         assert "columns" in preview_data
 
         assert len(preview_data["rows"]) > 0, "There should be some rows"
+        for row in preview_data["rows"]:
+            assert "key" in row, "Each row should have a key field"
 
         assert len(preview_data["columns"]) > 0, "There should be some cols"
         for col in preview_data["columns"]:

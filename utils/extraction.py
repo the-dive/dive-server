@@ -33,12 +33,14 @@ def extract_preview_data(xl: pd.ExcelFile, sheetname: str, table_properties=None
     df: pd.DataFrame = cast(pd.DataFrame, xl.parse(sheetname, nrows=50, header=1))
     df.replace({pd.NaT: None, np.nan: None}, inplace=True)
 
+    # Store map of column index and type information
     coltypes = {
         i: get_col_type_from_pd_type(t)
         for i, t in enumerate(df.dtypes)
     }
 
     df_dict = df.to_dict()
+
     columns: List[ColumnObject] = [
         {
             "key": str(i),
@@ -47,13 +49,17 @@ def extract_preview_data(xl: pd.ExcelFile, sheetname: str, table_properties=None
         }
         for i, col in enumerate(df_dict.keys())
     ]
-    rows = [
-        {
-            j: parse(df.loc[i, col], coltypes[j])
-            for j, col in enumerate(df.columns)
-        }
-        for i in range(len(df))
-    ]
+
+    def get_ith_row_from_df(i):
+        # Add an attribute key to each the row item, it's okay if it is later replaced
+        # It's just that we need to have a unique key field in each row
+        row = {"key": i}
+        for j, col in enumerate(df.columns):
+            row[str(j)] = parse(df.loc[i, col], coltypes[j])
+        return row
+
+    rows = [get_ith_row_from_df(i) for i in range(len(df))]
+
     return {
         "rows": rows,
         "columns": columns,

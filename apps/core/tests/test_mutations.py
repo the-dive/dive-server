@@ -135,16 +135,19 @@ class TestTableMutation(GraphQLTestCase):
                     result {
                         id
                         name
-                        properties
+                        properties {
+                            headerLevel
+                        }
                     }
                 }
             }
         """
         valid_props = {
-            "header_level": "2",
+            "headerLevel": "2",
             "timezone": "central",
             "language": "en",
-            "trim_whitespaces": True,
+            "trimWhitespaces": True,
+            # "treatTheseAsNa": None,
         }
 
         def _exclude(key):
@@ -156,10 +159,10 @@ class TestTableMutation(GraphQLTestCase):
         invalid_properties = [
             {},
             {"some_random_key": "random value"},
-            _exclude("header_level"),
+            _exclude("headerLevel"),
             _exclude("timezone"),
             _exclude("language"),
-            _exclude("trim_whitespaces"),
+            _exclude("trimWhitespaces"),
         ]
         for prop in invalid_properties:
             resp_data = self.query_check(
@@ -181,16 +184,18 @@ class TestTableMutation(GraphQLTestCase):
                     result {
                         id
                         name
-                        properties
+                        properties {
+                            headerLevel
+                        }
                     }
                 }
             }
         """
         valid_props = {
-            "header_level": "2",
+            "headerLevel": "2",
             "timezone": "central",
             "language": "en",
-            "trim_whitespaces": True,
+            "trimWhitespaces": True,
         }
 
         resp_data = self.query_check(
@@ -201,4 +206,4 @@ class TestTableMutation(GraphQLTestCase):
         content = resp_data["data"]["updateTable"]
         assert content["ok"] is True
         table = Table.objects.get(id=table.id)
-        assert table.properties == valid_props
+        assert content["result"]["properties"]["headerLevel"] == valid_props["headerLevel"]
