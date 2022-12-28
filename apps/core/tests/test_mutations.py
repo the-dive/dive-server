@@ -124,55 +124,6 @@ class TestTableMutation(GraphQLTestCase):
         table = Table.objects.get(id=table.id)
         assert table.is_added_to_workspace is True
 
-    def test_update_properties_invalid(self):
-        dataset = DatasetFactory.create(name="mydataset")
-        table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
-        mutate_query = """
-            mutation Mutation($tableId: ID! $input: TableInputType!) {
-                updateTable(id: $tableId data: $input) {
-                    ok
-                    errors
-                    result {
-                        id
-                        name
-                        properties {
-                            headerLevel
-                        }
-                    }
-                }
-            }
-        """
-        valid_props = {
-            "headerLevel": "2",
-            "timezone": "central",
-            "language": "en",
-            "trimWhitespaces": True,
-            # "treatTheseAsNa": None,
-        }
-
-        def _exclude(key):
-            return {
-                k: v for k, v in valid_props.items()
-                if k != key
-            }
-
-        invalid_properties = [
-            {},
-            {"some_random_key": "random value"},
-            _exclude("headerLevel"),
-            _exclude("timezone"),
-            _exclude("language"),
-            _exclude("trimWhitespaces"),
-        ]
-        for prop in invalid_properties:
-            resp_data = self.query_check(
-                mutate_query,
-                minput={"properties": json.dumps(prop)},
-                variables={"tableId": table.id},
-            )
-            content = resp_data["data"]["updateTable"]
-            assert content["ok"] is False
-
     def test_update_properties(self):
         dataset = DatasetFactory.create(name="mydataset")
         table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
@@ -200,7 +151,7 @@ class TestTableMutation(GraphQLTestCase):
 
         resp_data = self.query_check(
             mutate_query,
-            minput={"properties": json.dumps(valid_props)},
+            minput={"properties": valid_props},
             variables={"tableId": table.id},
         )
         content = resp_data["data"]["updateTable"]

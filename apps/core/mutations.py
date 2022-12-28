@@ -14,14 +14,20 @@ from apps.core.schema import DatasetType, TableType
 from apps.file.serializers import FileSerializer, File
 from apps.file.utils import create_dataset_and_tables
 
-from .serializers import TableUpdateSerializer
+from .serializers import TableUpdateSerializer, TablePropertiesSerializer
 from .models import Table
 
 
-TableInputType = generate_input_type_for_serializer(
-    'TableInputType',
-    TableUpdateSerializer,
+TablePropertiesInputType = generate_input_type_for_serializer(
+    'TablePropertiesInputType',
+    TablePropertiesSerializer,
 )
+
+
+class TableInputType(graphene.InputObjectType):
+    name = graphene.String()
+    properties = graphene.Field(TablePropertiesInputType)
+    is_added_to_workspace = graphene.Boolean()
 
 
 class CreateDatasetInputType(graphene.InputObjectType):
