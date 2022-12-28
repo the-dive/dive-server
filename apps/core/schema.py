@@ -15,8 +15,40 @@ from apps.core.filter_set import DatasetFilter
 from dive.consts import TABLE_HEADER_LEVELS, LANGUAGES, TIMEZONES
 
 
+class TablePropertiesType(graphene.ObjectType):
+    """
+    Type for table properties which is a json field in database
+    """
+    header_level = graphene.String()
+    timezone = graphene.String()
+    language = graphene.String()
+    trim_whitespaces = graphene.Boolean()
+    treat_these_as_na = graphene.String()
+
+    @staticmethod
+    def resolve_header_level(root, info, **kwargs):
+        return root.get("headerLevel")
+
+    @staticmethod
+    def resolve_timezone(root, info, **kwargs):
+        return root.get("timezone")
+
+    @staticmethod
+    def resolve_language(root, info, **kwargs):
+        return root.get("language")
+
+    @staticmethod
+    def resolve_trim_whitespaces(root, info, **kwargs):
+        return root.get("trimWhitespaces")
+
+    @staticmethod
+    def resolve_treat_these_as_na(root, info, **kwargs):
+        return root.get("treatTheseAsNa")
+
+
 class TableType(DjangoObjectType):
     preview_data = GenericScalar()
+    properties = graphene.Field(TablePropertiesType)
 
     class Meta:
         model = Table
@@ -62,12 +94,16 @@ class KeyLabelType(graphene.ObjectType):
     label = graphene.String()
 
 
-class TablePropertiesType(graphene.ObjectType):
-    headers = graphene.List(KeyLabelType)
+class TablePropertiesOptionsType(graphene.ObjectType):
+    """
+    Type for table properties options.
+    For example: table properties has following keys: headerLevel, time_zone, etc
+    """
+    header_levels = graphene.List(KeyLabelType)
     languages = graphene.List(KeyLabelType)
-    time_zones = graphene.List(KeyLabelType)
+    timezones = graphene.List(KeyLabelType)
 
-    def resolve_headers(self, info):
+    def resolve_header_levels(self, info):
         output = []
         for d in TABLE_HEADER_LEVELS:
             output.append(
@@ -89,19 +125,18 @@ class TablePropertiesType(graphene.ObjectType):
             )
         return output
 
-    def resolve_time_zones(self, info):
+    def resolve_timezones(self, info):
         return [
             KeyLabelType(key=tz["key"], label=tz["label"])
             for tz in TIMEZONES
         ]
 
 
-class PropertiesType(graphene.ObjectType):
-    table = graphene.Field(TablePropertiesType)
-    # column = graphene.Field(ColumnPropertiesType)
+class PropertiesOptionsType(graphene.ObjectType):
+    table = graphene.Field(TablePropertiesOptionsType)
 
     def resolve_table(self, info):
-        return TablePropertiesType()
+        return TablePropertiesOptionsType()
 
 
 class Query(graphene.ObjectType):
@@ -110,8 +145,8 @@ class Query(graphene.ObjectType):
         DatasetListType,
         pagination=PageGraphqlPagination(page_size_query_param="pageSize"),
     )
-    properties = graphene.Field(PropertiesType)
+    properties_options = graphene.Field(PropertiesOptionsType)
     table = DjangoObjectField(TableType)
 
-    def resolve_properties(self, info):
-        return PropertiesType()
+    def resolve_properties_options(self, info):
+        return PropertiesOptionsType()
