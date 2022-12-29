@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+
 import graphene
 from graphene_file_upload.scalars import Upload
 
@@ -66,6 +68,59 @@ class UpdateTable(DiveMutationMixin):
     result = graphene.Field(TableType)
 
 
+class DeleteTableFromWorkspace(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID()
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return DeleteTableFromWorkspace(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        instance.is_added_to_workspace = False
+        instance.save()
+        return DeleteTableFromWorkspace(result=instance, errors=None, ok=True)
+
+
+class CloneTable(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID()
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return DeleteTableFromWorkspace(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        cloned_table = instance.clone()
+        return DeleteTableFromWorkspace(result=cloned_table, errors=None, ok=True)
+
+
 class Mutation:
     create_dataset = CreateDataset.Field()
     update_table = UpdateTable.Field()
+    delete_table_from_workspace = DeleteTableFromWorkspace.Field()
+    clone_table = CloneTable.Field()

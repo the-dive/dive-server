@@ -160,3 +160,67 @@ class TestTableMutation(GraphQLTestCase):
         assert (
             content["result"]["properties"]["headerLevel"] == valid_props["headerLevel"]
         )
+
+    def test_delete_table_from_workspace(self):
+        dataset = DatasetFactory.create(name="mydataset")
+        table = TableFactory.create(
+            name="test",
+            dataset=dataset,
+            is_added_to_workspace=True,
+        )
+        query = """
+            mutation Mutation($id: ID!) {
+                deleteTableFromWorkspace(id: $id) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                        isAddedToWorkspace
+                    }
+                }
+            }
+        """
+        resp_data = self.query_check(
+            query,
+            variables={"id": table.id},
+        )
+        content = resp_data["data"]["deleteTableFromWorkspace"]
+        assert content["ok"] is True
+        table = Table.objects.get(id=table.id)
+        assert table.is_added_to_workspace is False
+
+    def test_clone_table_from_workspace(self):
+        dataset = DatasetFactory.create(name="mydataset")
+        table = TableFactory.create(
+            name="test",
+            dataset=dataset,
+            is_added_to_workspace=True,
+        )
+        old_table_count = Table.objects.count()
+        query = """
+            mutation Mutation($id: ID!) {
+                cloneTable(id: $id) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                        isAddedToWorkspace
+                        clonedFrom {
+                            id
+                            name
+                        }
+                    }
+                }
+            }
+        """
+        resp_data = self.query_check(
+            query,
+            variables={"id": table.id},
+        )
+        content = resp_data["data"]["cloneTable"]
+        assert content["ok"] is True
+        self.assertEqual(Table.objects.count(), old_table_count + 1)
+        self.assertEqual(content["result"]["clonedFrom"]["name"], table.name)
+        self.assertEqual(content["result"]["clonedFrom"]["id"], str(table.id))

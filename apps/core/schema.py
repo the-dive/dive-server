@@ -48,9 +48,6 @@ class TablePropertiesType(graphene.ObjectType):
 
 
 class TableType(DjangoObjectType):
-    preview_data = GenericScalar()
-    properties = graphene.Field(TablePropertiesType)
-
     class Meta:
         model = Table
         fields = (
@@ -60,10 +57,12 @@ class TableType(DjangoObjectType):
             "is_added_to_workspace",
             "preview_data",
             "properties",
+            "cloned_from",
         )
-        skip_registry = True
 
     status_display = EnumDescription(source="get_status_display")
+    preview_data = GenericScalar()
+    properties = graphene.Field(TablePropertiesType)
 
 
 class DatasetType(DjangoObjectType):
