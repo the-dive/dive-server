@@ -222,3 +222,35 @@ TIMEZONES = [
     }
     for zone in pytz.all_timezones
 ]
+
+
+COLUMN_TYPES = [
+    {
+        "key": "number",
+        "label": "Number",
+    },
+    {
+        "key": "string",
+        "label": "String",
+    },
+    {
+        "key": "date",
+        "label": "Date",
+    },
+    {
+        "key": "gender",
+        "label": "Gender",
+    },
+    {
+        "key": "url",
+        "label": "Url",
+    },
+    {
+        "key": "geo_area",
+        "label": "Geo Area",
+    },
+    {
+        "key": "datetime",
+        "label": "Datetime",
+    },
+]
