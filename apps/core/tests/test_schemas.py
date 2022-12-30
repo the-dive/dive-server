@@ -10,15 +10,15 @@ class GlobalPropertiesTestCase(GraphQLTestCase):
                 propertiesOptions {
                     table {
                         headerLevels {
-                            key
+                            value
                             label
                         }
                         languages {
-                            key
+                            value
                             label
                         }
                         timezones {
-                            key
+                            value
                             label
                         }
                     }

@@ -144,7 +144,7 @@ class TestTableMutation(GraphQLTestCase):
         """
         valid_props = {
             "headerLevel": "2",
-            "timezone": "central",
+            "timezone": "UTC",
             "language": "en",
             "trimWhitespaces": True,
         }

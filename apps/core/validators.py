@@ -9,11 +9,11 @@ table_properties_schema = {
     "properties": {
         "headerLevel": {
             "type": "string",
-            "enum": [x["key"] for x in TABLE_HEADER_LEVELS],
+            "enum": [x["value"] for x in TABLE_HEADER_LEVELS],
         },
         "timezone": {
             "type": "string",
-            "enum": [x["key"] for x in TIMEZONES],
+            "enum": [x["value"] for x in TIMEZONES],
         },
         "language": {
             "type": "string",
@@ -33,7 +33,7 @@ table_properties_schema = {
 def get_default_properties():
     return {
         "headerLevel": "1",
-        "timezone": "central",
+        "timezone": "UTC",
         "language": "en",
         "trimWhitespaces": False,
     }

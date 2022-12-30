@@ -97,8 +97,8 @@ class DatasetListType(CustomDjangoListObjectType):
         filterset_class = DatasetFilter
 
 
-class KeyLabelType(graphene.ObjectType):
-    key = graphene.String()
+class ValueLabelType(graphene.ObjectType):
+    value = graphene.String()
     label = graphene.String()
 
 
@@ -108,16 +108,16 @@ class TablePropertiesOptionsType(graphene.ObjectType):
     For example: table properties has following keys: headerLevel, time_zone, etc
     """
 
-    header_levels = graphene.List(KeyLabelType)
-    languages = graphene.List(KeyLabelType)
-    timezones = graphene.List(KeyLabelType)
+    header_levels = graphene.List(ValueLabelType)
+    languages = graphene.List(ValueLabelType)
+    timezones = graphene.List(ValueLabelType)
 
     def resolve_header_levels(self, info):
         output = []
         for d in TABLE_HEADER_LEVELS:
             output.append(
-                KeyLabelType(
-                    key=d["key"],
+                ValueLabelType(
+                    value=d["value"],
                     label=d["label"],
                 )
             )
@@ -127,15 +127,17 @@ class TablePropertiesOptionsType(graphene.ObjectType):
         output = []
         for d in LANGUAGES:
             output.append(
-                KeyLabelType(
-                    key=d[0],
+                ValueLabelType(
+                    value=d[0],
                     label=d[1],
                 )
             )
         return output
 
     def resolve_timezones(self, info):
-        return [KeyLabelType(key=tz["key"], label=tz["label"]) for tz in TIMEZONES]
+        return [
+            ValueLabelType(value=tz["value"], label=tz["label"]) for tz in TIMEZONES
+        ]
 
 
 class PropertiesOptionsType(graphene.ObjectType):

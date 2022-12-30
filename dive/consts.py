@@ -5,23 +5,23 @@ MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 TABLE_HEADER_LEVELS = [
     {
-        "key": "1",
+        "value": "1",
         "label": "One",
     },
     {
-        "key": "2",
+        "value": "2",
         "label": "Two",
     },
     {
-        "key": "3",
+        "value": "3",
         "label": "Three",
     },
     {
-        "key": "4",
+        "value": "4",
         "label": "Four",
     },
     {
-        "key": "5",
+        "value": "5",
         "label": "Five",
     },
 ]
@@ -215,9 +215,7 @@ LANGUAGES = [
 
 TIMEZONES = [
     {
-        "key": zone_split[1].lower()
-        if len(zone_split := zone.split("/")) > 1
-        else zone.lower(),
+        "value": zone,
         "label": zone,
     }
     for zone in pytz.all_timezones
