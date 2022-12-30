@@ -28,8 +28,6 @@ def process_excel_file(dataset: Dataset):
                 "preview_data": preview_data or {},
                 "has_errored": err is not None,
                 "error": err or None,
-                # Setting this for now, might change later
-                "is_added_to_workspace": True,
             }
             Table.objects.create(**table_data)
 

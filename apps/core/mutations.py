@@ -18,6 +18,7 @@ from apps.file.utils import create_dataset_and_tables
 
 from .serializers import TableUpdateSerializer, TablePropertiesSerializer
 from .models import Table
+from .utils import apply_properties_to_table
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
@@ -27,9 +28,7 @@ TablePropertiesInputType = generate_input_type_for_serializer(
 
 
 class TableInputType(graphene.InputObjectType):
-    name = graphene.String()
-    properties = graphene.Field(TablePropertiesInputType)
-    is_added_to_workspace = graphene.Boolean()
+    is_added_to_workspace = graphene.Boolean(required=True)
 
 
 class CreateDatasetInputType(graphene.InputObjectType):
@@ -56,10 +55,10 @@ class CreateDataset(graphene.Mutation):
         return CreateDataset(result=dataset, errors=None, ok=True)
 
 
-class UpdateTable(DiveMutationMixin):
+class AddTableToWorkSpace(DiveMutationMixin):
     class Arguments:
         data = TableInputType(required=True)
-        id = graphene.ID()
+        id = graphene.ID(required=True)
 
     model = Table
     serializer_class = TableUpdateSerializer
@@ -68,9 +67,46 @@ class UpdateTable(DiveMutationMixin):
     result = graphene.Field(TableType)
 
 
+class UpdateTableProperties(graphene.Mutation):
+    class Arguments:
+        data = TablePropertiesInputType(required=True)
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id, data):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return DeleteTableFromWorkspace(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        serializer = TablePropertiesSerializer(
+            data=data, context={"request": info.context.request}
+        )
+        if errors := mutation_is_not_valid(serializer):
+            return UpdateTableProperties(
+                errors=errors,
+                ok=False,
+            )
+        instance.properties = serializer.data
+        instance.save()
+        # call apply tabel properties
+        apply_properties_to_table()
+        return UpdateTableProperties(result=instance, errors=None, ok=True)
+
+
 class DeleteTableFromWorkspace(graphene.Mutation):
     class Arguments:
-        id = graphene.ID()
+        id = graphene.ID(required=True)
 
     errors = graphene.List(graphene.NonNull(CustomErrorType))
     ok = graphene.Boolean()
@@ -96,7 +132,7 @@ class DeleteTableFromWorkspace(graphene.Mutation):
 
 class CloneTable(graphene.Mutation):
     class Arguments:
-        id = graphene.ID()
+        id = graphene.ID(required=True)
 
     errors = graphene.List(graphene.NonNull(CustomErrorType))
     ok = graphene.Boolean()
@@ -121,6 +157,7 @@ class CloneTable(graphene.Mutation):
 
 class Mutation:
     create_dataset = CreateDataset.Field()
-    update_table = UpdateTable.Field()
+    add_table_to_workspace = AddTableToWorkSpace.Field()
     delete_table_from_workspace = DeleteTableFromWorkspace.Field()
     clone_table = CloneTable.Field()
+    update_table_properties = UpdateTableProperties.Field()
