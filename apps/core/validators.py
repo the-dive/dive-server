@@ -2,6 +2,7 @@ from jsonschema import validate, ValidationError as JSONValidationError
 from django.core.exceptions import ValidationError
 
 from dive.consts import TABLE_HEADER_LEVELS, TIMEZONES, LANGUAGES
+from .types import TablePropertiesDict
 
 
 table_properties_schema = {
@@ -30,12 +31,13 @@ table_properties_schema = {
 }
 
 
-def get_default_properties():
+def get_default_table_properties() -> TablePropertiesDict:
     return {
         "headerLevel": "1",
-        "timezone": "central",
+        "timezone": "UTC",
         "language": "en",
         "trimWhitespaces": False,
+        "treatTheseAsNa": "",
     }
 
 

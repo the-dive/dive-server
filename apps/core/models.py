@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from dive.base_models import BaseModel, NamedModelMixin
 from apps.file.models import File
 from utils.common import ColumnTypes
-from .validators import validate_table_properties, get_default_properties
+from .validators import validate_table_properties, get_default_table_properties
 
 
 class Dataset(BaseModel, NamedModelMixin):
@@ -39,7 +39,7 @@ class Table(BaseModel, NamedModelMixin):
         default=TableStatus.PENDING,
     )
     properties = models.JSONField(
-        default=get_default_properties, validators=[validate_table_properties]
+        default=get_default_table_properties, validators=[validate_table_properties]
     )
     preview_data = models.JSONField(blank=True, null=True)
     is_added_to_workspace = models.BooleanField(default=False)
