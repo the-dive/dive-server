@@ -106,7 +106,7 @@ class Migration(migrations.Migration):
                 (
                     "properties",
                     models.JSONField(
-                        default=apps.core.validators.get_default_properties,
+                        default=apps.core.validators.get_default_table_properties,
                         validators=[apps.core.validators.validate_table_properties],
                     ),
                 ),
