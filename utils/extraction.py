@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 
 from .common import ColumnTypes
+from apps.core.types import TablePropertiesDict
 
 
 PreviewResult = Union[Tuple[dict, Optional[str]], Tuple[Optional[dict], str]]
@@ -24,10 +25,25 @@ def get_col_type_from_pd_type(pd_type):
 
 
 def extract_preview_data(
-    xl: pd.ExcelFile, sheetname: str, table_properties=None
+    xl: pd.ExcelFile, sheetname: str, table_properties: TablePropertiesDict,
 ) -> PreviewResult:
-    df: pd.DataFrame = cast(pd.DataFrame, xl.parse(sheetname, nrows=50, header=1))
-    df.replace({pd.NaT: None, np.nan: None}, inplace=True)
+
+    header_level = parse_int(table_properties["headerLevel"]) or 1
+    # extract other header levels if header_level > 1
+    extra_headers: dict = (
+        extract_extra_headers(xl, sheetname, header_level)
+        if header_level > 1
+        else {}
+    )
+
+    df: pd.DataFrame = cast(pd.DataFrame, xl.parse(sheetname, nrows=50, header=header_level))
+    na_replacement = {
+        pd.NaT: None,
+        np.nan: None,
+        table_properties.get("treatTheseAsNa"): None,
+    }
+
+    df.replace(na_replacement, inplace=True)
 
     # Store map of column index and type information
     coltypes = {i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)}
@@ -48,7 +64,9 @@ def extract_preview_data(
         # It's just that we need to have a unique key field in each row
         row = {"key": i}
         for j, col in enumerate(df.columns):
-            row[str(j)] = parse(df.loc[i, col], coltypes[j])
+            parsed = parse(df.loc[i, col], coltypes[j])
+            should_strip = coltypes[j] == ColumnTypes.STRING and table_properties.get("trimWhitespaces", False)
+            row[str(j)] = str(parsed).strip() if should_strip else parsed
         return row
 
     rows = [get_ith_row_from_df(i) for i in range(len(df))]
@@ -56,7 +74,19 @@ def extract_preview_data(
     return {
         "rows": rows,
         "columns": columns,
+        "extra_headers": extra_headers,
     }, None
+
+
+def extract_extra_headers(xl: pd.ExcelFile, sheetname: str, header_level: int):
+    if header_level <= 1:
+        # There's nothing to read before header 1
+        return {}
+    df: pd.DataFrame = cast(
+        pd.DataFrame,
+        xl.parse(sheetname, nrows=header_level - 1, header=None),
+    )
+    return df.to_dict()
 
 
 def parse(val: Any, coltype: ColumnTypes) -> str | int | float | None:

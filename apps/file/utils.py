@@ -4,22 +4,18 @@ from django.db import transaction
 
 from apps.file.models import File
 from apps.core.models import Dataset, Table
+from apps.core.validators import get_default_table_properties
 from utils.common import get_file_extension
 from utils.extraction import extract_preview_data
-
-
-# TODO: add other attributes and add typings
-DEFAULT_TABLE_PROPERTIES = {
-    "header": 1,
-}
 
 
 def process_excel_file(dataset: Dataset):
     pd_excel = pd.ExcelFile(dataset.file.file.path)
     sheets = [sheet for sheet in pd_excel.sheet_names]
+    default_props = get_default_table_properties()
     with transaction.atomic():
         for sheet in sheets:
-            preview_data, err = extract_preview_data(pd_excel, sheet)
+            preview_data, err = extract_preview_data(pd_excel, sheet, default_props)
             table_data = {
                 "dataset": dataset,
                 "name": sheet,
