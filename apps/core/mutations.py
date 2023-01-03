@@ -16,19 +16,14 @@ from apps.core.schema import DatasetType, TableType
 from apps.file.serializers import FileSerializer, File
 from apps.file.utils import create_dataset_and_tables
 
-from .serializers import TableUpdateSerializer, TablePropertiesSerializer
+from .serializers import TablePropertiesSerializer
 from .models import Table
-from .utils import apply_properties_to_table
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
     "TablePropertiesInputType",
     TablePropertiesSerializer,
 )
-
-
-class TableInputType(graphene.InputObjectType):
-    is_added_to_workspace = graphene.Boolean(required=True)
 
 
 class CreateDatasetInputType(graphene.InputObjectType):
@@ -57,14 +52,29 @@ class CreateDataset(graphene.Mutation):
 
 class AddTableToWorkSpace(DiveMutationMixin):
     class Arguments:
-        data = TableInputType(required=True)
+        is_added_to_workspace = graphene.Boolean(required=True)
         id = graphene.ID(required=True)
 
-    model = Table
-    serializer_class = TableUpdateSerializer
     errors = graphene.List(graphene.NonNull(CustomErrorType))
     ok = graphene.Boolean()
     result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id, is_added_to_workspace):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return AddTableToWorkSpace(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        instance.is_added_to_workspace = is_added_to_workspace
+        instance.save()
+        return AddTableToWorkSpace(result=instance, errors=None, ok=True)
 
 
 class UpdateTableProperties(graphene.Mutation):
@@ -81,7 +91,7 @@ class UpdateTableProperties(graphene.Mutation):
         try:
             instance = Table.objects.get(id=id)
         except Table.DoesNotExist:
-            return DeleteTableFromWorkspace(
+            return UpdateTableProperties(
                 errors=[
                     dict(
                         field="nonFieldErrors",
@@ -99,8 +109,7 @@ class UpdateTableProperties(graphene.Mutation):
             )
         instance.properties = serializer.data
         instance.save()
-        # call apply tabel properties
-        apply_properties_to_table()
+        # TODO: call apply table properties
         return UpdateTableProperties(result=instance, errors=None, ok=True)
 
 
@@ -143,7 +152,7 @@ class CloneTable(graphene.Mutation):
         try:
             instance = Table.objects.get(id=id)
         except Table.DoesNotExist:
-            return DeleteTableFromWorkspace(
+            return CloneTable(
                 errors=[
                     dict(
                         field="nonFieldErrors",

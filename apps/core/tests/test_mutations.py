@@ -101,8 +101,8 @@ class TestTableMutation(GraphQLTestCase):
         dataset = DatasetFactory.create(name="mydataset")
         table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
         mutate_query = """
-            mutation Mutation($tableId: ID! $input: TableInputType!) {
-                addTableToWorkspace(id: $tableId data: $input) {
+            mutation Mutation($tableId: ID! $isAddedToWorkspace: Boolean!) {
+                addTableToWorkspace(id: $tableId isAddedToWorkspace: $isAddedToWorkspace) {
                     ok
                     errors
                     result {
@@ -115,8 +115,7 @@ class TestTableMutation(GraphQLTestCase):
         """
         resp_data = self.query_check(
             mutate_query,
-            minput={"isAddedToWorkspace": True},
-            variables={"tableId": table.id},
+            variables={"tableId": table.id, "isAddedToWorkspace": True},
         )
         content = resp_data["data"]["addTableToWorkspace"]
         assert content["ok"] is True
@@ -221,6 +220,5 @@ class TestTableMutation(GraphQLTestCase):
             variables={"tableId": table.id},
         )
         content = resp_data["data"]["updateTableProperties"]
-        print(content)
         assert content["ok"] is True
         self.assertEqual(content["result"]["properties"], data)
