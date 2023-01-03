@@ -101,8 +101,8 @@ class TestTableMutation(GraphQLTestCase):
         dataset = DatasetFactory.create(name="mydataset")
         table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
         mutate_query = """
-            mutation Mutation($tableId: ID! $input: TableInputType!) {
-                updateTable(id: $tableId data: $input) {
+            mutation Mutation($tableId: ID! $isAddedToWorkspace: Boolean!) {
+                addTableToWorkspace(id: $tableId isAddedToWorkspace: $isAddedToWorkspace) {
                     ok
                     errors
                     result {
@@ -115,48 +115,110 @@ class TestTableMutation(GraphQLTestCase):
         """
         resp_data = self.query_check(
             mutate_query,
-            minput={"isAddedToWorkspace": True},
-            variables={"tableId": table.id},
+            variables={"tableId": table.id, "isAddedToWorkspace": True},
         )
-        content = resp_data["data"]["updateTable"]
+        content = resp_data["data"]["addTableToWorkspace"]
         assert content["ok"] is True
         assert content["result"]["isAddedToWorkspace"] is True
         table = Table.objects.get(id=table.id)
         assert table.is_added_to_workspace is True
 
-    def test_update_properties(self):
+    def test_delete_table_from_workspace(self):
         dataset = DatasetFactory.create(name="mydataset")
-        table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
-        mutate_query = """
-            mutation Mutation($tableId: ID! $input: TableInputType!) {
-                updateTable(id: $tableId data: $input) {
+        table = TableFactory.create(
+            name="test",
+            dataset=dataset,
+            is_added_to_workspace=True,
+        )
+        query = """
+            mutation Mutation($id: ID!) {
+                deleteTableFromWorkspace(id: $id) {
                     ok
                     errors
                     result {
                         id
                         name
-                        properties {
-                            headerLevel
+                        isAddedToWorkspace
+                    }
+                }
+            }
+        """
+        resp_data = self.query_check(
+            query,
+            variables={"id": table.id},
+        )
+        content = resp_data["data"]["deleteTableFromWorkspace"]
+        assert content["ok"] is True
+        table = Table.objects.get(id=table.id)
+        assert table.is_added_to_workspace is False
+
+    @assert_object_created(Table, count=2)
+    def test_clone_table_from_workspace(self):
+        dataset = DatasetFactory.create(name="mydataset")
+        table = TableFactory.create(
+            name="test",
+            dataset=dataset,
+            is_added_to_workspace=True,
+        )
+        query = """
+            mutation Mutation($id: ID!) {
+                cloneTable(id: $id) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                        isAddedToWorkspace
+                        clonedFrom {
+                            id
+                            name
                         }
                     }
                 }
             }
         """
-        valid_props = {
+        resp_data = self.query_check(
+            query,
+            variables={"id": table.id},
+        )
+        content = resp_data["data"]["cloneTable"]
+        assert content["ok"] is True
+        self.assertEqual(content["result"]["clonedFrom"]["name"], table.name)
+        self.assertEqual(content["result"]["clonedFrom"]["id"], str(table.id))
+
+    def test_update_table_properties(self):
+        dataset = DatasetFactory.create(name="mydataset")
+        table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
+        mutate_query = """
+            mutation Mutation($tableId: ID! $input: TablePropertiesInputType!) {
+                updateTableProperties(id: $tableId data: $input) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                        isAddedToWorkspace
+                        properties {
+                            headerLevel
+                            language
+                            timezone
+                            trimWhitespaces
+                        }
+                    }
+                }
+            }
+        """
+        data = {
             "headerLevel": "2",
             "timezone": "central",
             "language": "en",
             "trimWhitespaces": True,
         }
-
         resp_data = self.query_check(
             mutate_query,
-            minput={"properties": valid_props},
+            minput=data,
             variables={"tableId": table.id},
         )
-        content = resp_data["data"]["updateTable"]
+        content = resp_data["data"]["updateTableProperties"]
         assert content["ok"] is True
-        table = Table.objects.get(id=table.id)
-        assert (
-            content["result"]["properties"]["headerLevel"] == valid_props["headerLevel"]
-        )
+        self.assertEqual(content["result"]["properties"], data)

@@ -12,7 +12,12 @@ from apps.core.models import (
     Table,
 )
 from apps.core.filter_set import DatasetFilter
-from dive.consts import TABLE_HEADER_LEVELS, LANGUAGES, TIMEZONES
+from dive.consts import (
+    TABLE_HEADER_LEVELS,
+    LANGUAGES,
+    TIMEZONES,
+    COLUMN_TYPES,
+)
 
 
 class TablePropertiesType(graphene.ObjectType):
@@ -48,9 +53,6 @@ class TablePropertiesType(graphene.ObjectType):
 
 
 class TableType(DjangoObjectType):
-    preview_data = GenericScalar()
-    properties = graphene.Field(TablePropertiesType)
-
     class Meta:
         model = Table
         fields = (
@@ -60,10 +62,12 @@ class TableType(DjangoObjectType):
             "is_added_to_workspace",
             "preview_data",
             "properties",
+            "cloned_from",
         )
-        skip_registry = True
 
     status_display = EnumDescription(source="get_status_display")
+    preview_data = GenericScalar()
+    properties = graphene.Field(TablePropertiesType)
 
 
 class DatasetType(DjangoObjectType):
@@ -100,6 +104,21 @@ class DatasetListType(CustomDjangoListObjectType):
 class KeyLabelType(graphene.ObjectType):
     key = graphene.String()
     label = graphene.String()
+
+
+class ColumnPropertiesOptionsType(graphene.ObjectType):
+    column_types = graphene.List(KeyLabelType)
+
+    def resolve_column_types(self, info):
+        output = []
+        for d in COLUMN_TYPES:
+            output.append(
+                KeyLabelType(
+                    key=d["key"],
+                    label=d["label"],
+                )
+            )
+        return output
 
 
 class TablePropertiesOptionsType(graphene.ObjectType):
@@ -140,9 +159,13 @@ class TablePropertiesOptionsType(graphene.ObjectType):
 
 class PropertiesOptionsType(graphene.ObjectType):
     table = graphene.Field(TablePropertiesOptionsType)
+    column = graphene.Field(ColumnPropertiesOptionsType)
 
     def resolve_table(self, info):
         return TablePropertiesOptionsType()
+
+    def resolve_column(self, info):
+        return ColumnPropertiesOptionsType()
 
 
 class Query(graphene.ObjectType):

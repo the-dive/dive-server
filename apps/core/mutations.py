@@ -1,3 +1,5 @@
+from django.utils.translation import gettext
+
 import graphene
 from graphene_file_upload.scalars import Upload
 
@@ -14,7 +16,7 @@ from apps.core.schema import DatasetType, TableType
 from apps.file.serializers import FileSerializer, File
 from apps.file.utils import create_dataset_and_tables
 
-from .serializers import TableUpdateSerializer, TablePropertiesSerializer
+from .serializers import TablePropertiesSerializer
 from .models import Table
 
 
@@ -22,12 +24,6 @@ TablePropertiesInputType = generate_input_type_for_serializer(
     "TablePropertiesInputType",
     TablePropertiesSerializer,
 )
-
-
-class TableInputType(graphene.InputObjectType):
-    name = graphene.String()
-    properties = graphene.Field(TablePropertiesInputType)
-    is_added_to_workspace = graphene.Boolean()
 
 
 class CreateDatasetInputType(graphene.InputObjectType):
@@ -54,18 +50,123 @@ class CreateDataset(graphene.Mutation):
         return CreateDataset(result=dataset, errors=None, ok=True)
 
 
-class UpdateTable(DiveMutationMixin):
+class AddTableToWorkSpace(DiveMutationMixin):
     class Arguments:
-        data = TableInputType(required=True)
-        id = graphene.ID()
+        is_added_to_workspace = graphene.Boolean(required=True)
+        id = graphene.ID(required=True)
 
-    model = Table
-    serializer_class = TableUpdateSerializer
     errors = graphene.List(graphene.NonNull(CustomErrorType))
     ok = graphene.Boolean()
     result = graphene.Field(TableType)
 
+    @staticmethod
+    def mutate(root, info, id, is_added_to_workspace):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return AddTableToWorkSpace(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        instance.is_added_to_workspace = is_added_to_workspace
+        instance.save()
+        return AddTableToWorkSpace(result=instance, errors=None, ok=True)
+
+
+class UpdateTableProperties(graphene.Mutation):
+    class Arguments:
+        data = TablePropertiesInputType(required=True)
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id, data):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return UpdateTableProperties(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        serializer = TablePropertiesSerializer(
+            data=data, context={"request": info.context.request}
+        )
+        if errors := mutation_is_not_valid(serializer):
+            return UpdateTableProperties(
+                errors=errors,
+                ok=False,
+            )
+        instance.properties = serializer.data
+        instance.save()
+        # TODO: call apply table properties
+        return UpdateTableProperties(result=instance, errors=None, ok=True)
+
+
+class DeleteTableFromWorkspace(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return DeleteTableFromWorkspace(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        instance.is_added_to_workspace = False
+        instance.save()
+        return DeleteTableFromWorkspace(result=instance, errors=None, ok=True)
+
+
+class CloneTable(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return CloneTable(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        cloned_table = instance.clone()
+        return DeleteTableFromWorkspace(result=cloned_table, errors=None, ok=True)
+
 
 class Mutation:
     create_dataset = CreateDataset.Field()
-    update_table = UpdateTable.Field()
+    add_table_to_workspace = AddTableToWorkSpace.Field()
+    delete_table_from_workspace = DeleteTableFromWorkspace.Field()
+    clone_table = CloneTable.Field()
+    update_table_properties = UpdateTableProperties.Field()

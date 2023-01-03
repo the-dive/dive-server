@@ -1,3 +1,5 @@
+import copy
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -44,6 +46,16 @@ class Table(BaseModel, NamedModelMixin):
     extra_data = models.JSONField(default=dict)
     has_errored = models.BooleanField(default=False)
     error = models.TextField(null=True, blank=True)
+    cloned_from = models.ForeignKey(
+        "Table", on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    def clone(self):
+        cloned_table = copy.deepcopy(self)
+        cloned_table.pk = None
+        cloned_table.cloned_from = self
+        cloned_table.save()
+        return cloned_table
 
 
 class Column(BaseModel, NamedModelMixin):
