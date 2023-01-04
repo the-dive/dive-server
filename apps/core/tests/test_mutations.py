@@ -203,6 +203,7 @@ class TestTableMutation(GraphQLTestCase):
                             language
                             timezone
                             trimWhitespaces
+                            treatTheseAsNa
                         }
                     }
                 }
@@ -210,9 +211,10 @@ class TestTableMutation(GraphQLTestCase):
         """
         data = {
             "headerLevel": "2",
-            "timezone": "central",
+            "timezone": "UTC",
             "language": "en",
             "trimWhitespaces": True,
+            "treatTheseAsNa": "",
         }
         resp_data = self.query_check(
             mutate_query,
@@ -220,7 +222,10 @@ class TestTableMutation(GraphQLTestCase):
             variables={"tableId": table.id},
         )
         content = resp_data["data"]["updateTableProperties"]
+        print(resp_data)
         assert content["ok"] is True
+        print('res', content["result"]["properties"])
+        print('data', data)
         self.assertEqual(content["result"]["properties"], data)
 
     def test_rename_table(self):
