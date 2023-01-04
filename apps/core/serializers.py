@@ -7,11 +7,11 @@ from .validators import table_properties_schema
 
 
 class TablePropertiesSerializer(serializers.Serializer):
-    headerLevel = serializers.CharField()
-    timezone = serializers.CharField()
-    language = serializers.CharField()
-    trimWhitespaces = serializers.BooleanField()
-    treatTheseAsNa = serializers.CharField(required=False)
+    headerLevel = serializers.CharField(required=True)
+    timezone = serializers.CharField(required=True)
+    language = serializers.CharField(required=True)
+    trimWhitespaces = serializers.BooleanField(required=True)
+    treatTheseAsNa = serializers.CharField(required=True, allow_blank=True)
 
     def validate(self, data):
         if not data:
