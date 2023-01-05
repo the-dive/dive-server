@@ -24,12 +24,12 @@ def get_col_type_from_pd_type(pd_type):
     return ColumnTypes.STRING
 
 
-def extract_preview_data(
+def extract_preview_data_from_excel(
     xl: pd.ExcelFile, sheetname: str, table_properties: TablePropertiesDict,
 ) -> PreviewResult:
 
     header_level = parse_int(table_properties["headerLevel"]) or 1
-    # extract other header levels if header_level > 1
+    # extract and save other header levels if header_level > 1
     extra_headers: dict = (
         extract_extra_headers(xl, sheetname, header_level)
         if header_level > 1

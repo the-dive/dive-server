@@ -1,9 +1,14 @@
+import os
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from rest_framework.test import APITestCase, APIClient  # type: ignore
 
 from utils.helpers import generate_random_key
 
 User = get_user_model()
+
+TEST_MEDIA_DIR = os.path.join(settings.TEST_DIR, "media")
+TEST_FILE_PATH = os.path.join(settings.TEST_DIR, "documents", "test1.xlsx")
 
 
 class BaseAPITestCase(APITestCase):
