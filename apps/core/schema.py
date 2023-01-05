@@ -11,7 +11,7 @@ from apps.core.models import (
     Dataset,
     Table,
 )
-from apps.core.filter_set import DatasetFilter
+from apps.core.filter_set import DatasetFilter, TableFilter
 from dive.consts import (
     TABLE_HEADER_LEVELS,
     LANGUAGES,
@@ -68,6 +68,12 @@ class TableType(DjangoObjectType):
     status_display = EnumDescription(source="get_status_display")
     preview_data = GenericScalar()
     properties = graphene.Field(TablePropertiesType)
+
+
+class TableListType(CustomDjangoListObjectType):
+    class Meta:
+        model = Table
+        filterset_class = TableFilter
 
 
 class DatasetType(DjangoObjectType):
@@ -176,6 +182,10 @@ class Query(graphene.ObjectType):
     )
     properties_options = graphene.Field(PropertiesOptionsType)
     table = DjangoObjectField(TableType)
+    tables = DjangoPaginatedListObjectField(
+        TableListType,
+        pagination=PageGraphqlPagination(page_size_query_param="pageSize"),
+    )
 
     def resolve_properties_options(self, info):
         return PropertiesOptionsType()
