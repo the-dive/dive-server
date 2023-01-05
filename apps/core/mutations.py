@@ -18,6 +18,7 @@ from apps.file.utils import create_dataset_and_tables
 
 from .serializers import TablePropertiesSerializer
 from .models import Table
+from .utils import apply_table_properties
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
@@ -110,6 +111,7 @@ class UpdateTableProperties(graphene.Mutation):
         instance.properties = serializer.data
         instance.save()
         # TODO: call apply table properties
+        apply_table_properties(instance)
         return UpdateTableProperties(result=instance, errors=None, ok=True)
 
 
