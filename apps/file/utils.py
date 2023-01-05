@@ -6,7 +6,7 @@ from apps.file.models import File
 from apps.core.models import Dataset, Table
 from apps.core.validators import get_default_table_properties
 from utils.common import get_file_extension
-from utils.extraction import extract_preview_data
+from utils.extraction import extract_preview_data_from_excel
 
 
 def process_excel_file(dataset: Dataset):
@@ -14,18 +14,26 @@ def process_excel_file(dataset: Dataset):
     default_props = get_default_table_properties()
     with transaction.atomic():
         for sheet_name in pd_excel.sheet_names:
-            preview_data, err = extract_preview_data(pd_excel, sheet_name, default_props)
             table_data = {
                 "dataset": dataset,
                 "name": sheet_name,  # User can modify this later
                 "original_name": sheet_name,  # This cannot be modified
                 "created_by": dataset.file.created_by,
                 "modified_by": dataset.file.modified_by,
-                "preview_data": preview_data or {},
-                "has_errored": err is not None,
-                "error": err or None,
+                "preview_data": {},
+                "has_errored": False,
+                "error": None,
+                "properties": default_props,
             }
-            Table.objects.create(**table_data)
+            table = Table.objects.create(**table_data)
+            preview_data, err = extract_preview_data_from_excel(
+                pd_excel,
+                table.original_name,
+                table.properties
+            )
+            table.preview_data = preview_data
+            table.error = err
+            table.save()
 
 
 def process_csv_file(dataset: Dataset):
