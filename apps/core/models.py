@@ -32,6 +32,7 @@ class Table(BaseModel, NamedModelMixin):
         PENDING = "pending", _("Pending")
         EXTRACTED = "extracted", _("Extracted")
 
+    original_name = models.CharField(max_length=255)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=50,

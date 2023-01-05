@@ -11,14 +11,14 @@ from utils.extraction import extract_preview_data
 
 def process_excel_file(dataset: Dataset):
     pd_excel = pd.ExcelFile(dataset.file.file.path)
-    sheets = [sheet for sheet in pd_excel.sheet_names]
     default_props = get_default_table_properties()
     with transaction.atomic():
-        for sheet in sheets:
-            preview_data, err = extract_preview_data(pd_excel, sheet, default_props)
+        for sheet_name in pd_excel.sheet_names:
+            preview_data, err = extract_preview_data(pd_excel, sheet_name, default_props)
             table_data = {
                 "dataset": dataset,
-                "name": sheet,
+                "name": sheet_name,  # User can modify this later
+                "original_name": sheet_name,  # This cannot be modified
                 "created_by": dataset.file.created_by,
                 "modified_by": dataset.file.modified_by,
                 "preview_data": preview_data or {},
@@ -29,9 +29,11 @@ def process_excel_file(dataset: Dataset):
 
 
 def process_csv_file(dataset: Dataset):
+    name = os.path.basename(dataset.file.file.name)
     table_data = {
         "dataset": dataset,
-        "name": os.path.basename(dataset.file.file.name),
+        "name": name,  # This can be modified later
+        "original_name": name,  # This cannot be modified
         "created_by": dataset.file.created_by,
         "modified_by": dataset.file.modified_by,
     }
