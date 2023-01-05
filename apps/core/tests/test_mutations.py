@@ -1,25 +1,20 @@
-import os
 import json
 import shutil
 import pandas as pd
 
 from unittest import mock
 from django.test import override_settings
-from django.conf import settings
 
 from graphene_file_upload.django.testing import GraphQLFileUploadTestCase
 
 from utils.graphene.tests import GraphQLTestCase
 from dive.factories import UserFactory
-from dive.base_test import assert_object_created
+from dive.base_test import assert_object_created, TEST_MEDIA_DIR, TEST_FILE_PATH
 from apps.core.models import Dataset, Table
 from apps.core.factories import DatasetFactory, TableFactory
 
 from .utils import create_test_file
 
-
-TEST_MEDIA_DIR = os.path.join(settings.TEST_DIR, "media")
-TEST_FILE_PATH = os.path.join(settings.TEST_DIR, "documents", "test1.xlsx")
 
 _pd_excel = pd.ExcelFile(TEST_FILE_PATH)
 SHEETS_COUNT_IN_TEST_EXCEL = len(_pd_excel.sheet_names)
@@ -189,7 +184,7 @@ class TestTableMutation(GraphQLTestCase):
         self.assertEqual(content["result"]["clonedFrom"]["name"], table.name)
         self.assertEqual(content["result"]["clonedFrom"]["id"], str(table.id))
 
-    @mock.patch('apps.core.mutations.apply_table_properties')
+    @mock.patch('apps.core.mutations.apply_table_properties_and_extract_preview')
     def test_update_table_properties(self, apply_table_properties_func):
         file = create_test_file(TEST_FILE_PATH)
         dataset = DatasetFactory.create(name="mydataset", file=file)
