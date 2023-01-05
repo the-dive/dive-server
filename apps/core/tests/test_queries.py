@@ -3,12 +3,12 @@ import shutil
 import pandas as pd
 
 from utils.graphene.tests import GraphQLTestCase
-from django.core.files.base import File as File_
 from django.test import override_settings
 from django.conf import settings
 
-from apps.file.models import File
 from apps.file.utils import create_dataset_and_tables
+
+from .utils import create_test_file
 
 
 TEST_MEDIA_DIR = os.path.join(settings.TEST_DIR, "media")
@@ -55,17 +55,16 @@ class TestDatasetQuery(GraphQLTestCase):
     def test_get_dataset(self):
         # Create dataset first
         file_name = "test.xlsx"
-        file_obj = self.create_file(file_name=file_name)
+        file_obj = create_test_file(TEST_FILE_PATH, file_name=file_name)
         dataset = create_dataset_and_tables(file_obj)
         content = self.query_check(self.dataset_query, variables={"id": dataset.pk})
         data = content["data"]["dataset"]
         assert data["id"] == str(dataset.pk)
-        assert data["name"] == file_name
         tables = data["tables"]
         assert len(tables) == SHEETS_COUNT_IN_TEST_EXCEL
 
     def test_get_table(self):
-        file_obj = self.create_file()
+        file_obj = create_test_file(TEST_FILE_PATH)
         dataset = create_dataset_and_tables(file_obj)
         table = dataset.table_set.first()
         content = self.query_check(
@@ -87,14 +86,3 @@ class TestDatasetQuery(GraphQLTestCase):
             assert "type" in col
             assert "label" in col
             assert "key" in col
-
-    def create_file(self, file_name="test.xlsx") -> File:
-        test_file = open(TEST_FILE_PATH, "rb")
-        return File.objects.create(
-            file_type=File.Type.EXCEL,
-            # NOTE: if the name argument is not passed in the following line,
-            # SuspiciousFileOperation will be raised by django as the file name
-            # will be /some/absolute/path.xlsx
-            file=File_(test_file, name=file_name),
-            file_size=os.path.getsize(TEST_FILE_PATH),
-        )

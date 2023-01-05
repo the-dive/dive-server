@@ -3,6 +3,7 @@ import json
 import shutil
 import pandas as pd
 
+from unittest import mock
 from django.test import override_settings
 from django.conf import settings
 
@@ -13,6 +14,8 @@ from dive.factories import UserFactory
 from dive.base_test import assert_object_created
 from apps.core.models import Dataset, Table
 from apps.core.factories import DatasetFactory, TableFactory
+
+from .utils import create_test_file
 
 
 TEST_MEDIA_DIR = os.path.join(settings.TEST_DIR, "media")
@@ -49,7 +52,7 @@ class TestDatasetMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
         }
         self.user = UserFactory.create()
         self.force_login(self.user)
-        self.file = TEST_FILE_PATH
+        self.file_path = TEST_FILE_PATH
         super().setUp()
 
     def tearDown(self):
@@ -80,7 +83,7 @@ class TestDatasetMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
                 self.assertIsNotNone(table[field])
 
     def call_create_dataset_api(self):
-        with open(self.file, "rb") as t_file:
+        with open(self.file_path, "rb") as t_file:
             response = self.client.post(
                 "/graphql/",
                 data={
@@ -186,8 +189,10 @@ class TestTableMutation(GraphQLTestCase):
         self.assertEqual(content["result"]["clonedFrom"]["name"], table.name)
         self.assertEqual(content["result"]["clonedFrom"]["id"], str(table.id))
 
-    def test_update_table_properties(self):
-        dataset = DatasetFactory.create(name="mydataset")
+    @mock.patch('apps.core.mutations.apply_table_properties')
+    def test_update_table_properties(self, apply_table_properties_func):
+        file = create_test_file(TEST_FILE_PATH)
+        dataset = DatasetFactory.create(name="mydataset", file=file)
         table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
         mutate_query = """
             mutation Mutation($tableId: ID! $input: TablePropertiesInputType!) {
@@ -222,10 +227,8 @@ class TestTableMutation(GraphQLTestCase):
             variables={"tableId": table.id},
         )
         content = resp_data["data"]["updateTableProperties"]
-        print(resp_data)
         assert content["ok"] is True
-        print('res', content["result"]["properties"])
-        print('data', data)
+        apply_table_properties_func.assert_called_once_with(table)
         self.assertEqual(content["result"]["properties"], data)
 
     def test_rename_table(self):
