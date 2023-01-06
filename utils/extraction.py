@@ -25,18 +25,24 @@ def get_col_type_from_pd_type(pd_type):
 
 
 def extract_preview_data_from_excel(
-    xl: pd.ExcelFile, sheetname: str, table_properties: TablePropertiesDict,
+    xl: pd.ExcelFile,
+    sheetname: str,
+    table_properties: TablePropertiesDict,
 ) -> PreviewResult:
 
-    header_level = parse_int(table_properties["headerLevel"]) or 1
-    # extract and save other header levels if header_level > 1
-    extra_headers: dict = (
+    header_level = parse_int(table_properties["headerLevel"]) or 0
+    # extract and save other header levels if header_level >= 1
+    extra_headers: List[List[str]] = (
         extract_extra_headers(xl, sheetname, header_level)
-        if header_level > 1
-        else {}
+        if header_level > 0
+        else []
     )
 
-    df: pd.DataFrame = cast(pd.DataFrame, xl.parse(sheetname, nrows=50, header=header_level))
+    df: pd.DataFrame = cast(pd.DataFrame, xl.parse(
+        sheetname,
+        nrows=50,
+        header=header_level,
+    ))
     na_replacement = {
         pd.NaT: None,
         np.nan: None,
@@ -78,15 +84,34 @@ def extract_preview_data_from_excel(
     }, None
 
 
-def extract_extra_headers(xl: pd.ExcelFile, sheetname: str, header_level: int):
-    if header_level <= 1:
+def extract_extra_headers(xl: pd.ExcelFile, sheetname: str, header_level: int) -> List[List[str]]:
+    if header_level < 1:
         # There's nothing to read before header 1
-        return {}
+        return []
     df: pd.DataFrame = cast(
         pd.DataFrame,
-        xl.parse(sheetname, nrows=header_level - 1, header=None),
+        xl.parse(
+            sheetname,
+            nrows=header_level,
+            header=None,
+        ),
     )
-    return df.to_dict()
+    return [[str(e) for e in row] for row in df.itertuples(index=False)]
+
+
+def extract_data_from_excel(
+    xl: pd.ExcelFile,
+    sheetname: str,
+    table_properties: TablePropertiesDict,
+):
+    header_level = parse_int(table_properties["headerLevel"]) or 0
+    df: pd.DataFrame = cast(pd.DataFrame, xl.parse(sheetname, header=header_level))
+    na_replacement = {
+        pd.NaT: None,
+        np.nan: None,
+        table_properties.get("treatTheseAsNa"): None,
+    }
+    df.replace(na_replacement, inplace=True)
 
 
 def parse(val: Any, coltype: ColumnTypes) -> str | int | float | None:

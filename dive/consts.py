@@ -3,26 +3,19 @@ import pytz
 MAX_FILE_SIZE_MB = 10  # 10 MB limit
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
+# Zero indexed header levels, users will be displayed 1 indexed option names
 TABLE_HEADER_LEVELS = [
     {
-        "key": "1",
+        "key": "0",
         "label": "One",
     },
     {
-        "key": "2",
+        "key": "1",
         "label": "Two",
     },
     {
-        "key": "3",
+        "key": "2",
         "label": "Three",
-    },
-    {
-        "key": "4",
-        "label": "Four",
-    },
-    {
-        "key": "5",
-        "label": "Five",
     },
 ]
 

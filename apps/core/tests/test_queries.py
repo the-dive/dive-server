@@ -6,7 +6,7 @@ from utils.graphene.tests import GraphQLTestCase
 from django.test import override_settings
 from django.conf import settings
 
-from apps.file.utils import create_dataset_and_tables
+from apps.core.utils import create_dataset_and_tables
 
 from .utils import create_test_file
 

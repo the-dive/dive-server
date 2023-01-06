@@ -14,11 +14,12 @@ from utils.graphene.mutation import (
 
 from apps.core.schema import DatasetType, TableType
 from apps.file.serializers import FileSerializer, File
-from apps.file.utils import create_dataset_and_tables
+from apps.core.utils import create_dataset_and_tables
 
 from .serializers import TablePropertiesSerializer
 from .models import Table
 from .utils import apply_table_properties_and_extract_preview
+from .tasks import extract_table_data
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
@@ -75,6 +76,7 @@ class AddTableToWorkSpace(DiveMutationMixin):
             )
         instance.is_added_to_workspace = is_added_to_workspace
         instance.save()
+        extract_table_data.delay(instance.id)
         return AddTableToWorkSpace(result=instance, errors=None, ok=True)
 
 
