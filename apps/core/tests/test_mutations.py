@@ -95,7 +95,8 @@ class TestDatasetMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
 
 @override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
 class TestTableMutation(GraphQLTestCase):
-    def test_add_to_workspace(self):
+    @mock.patch('apps.core.mutations.extract_table_data.delay')
+    def test_add_to_workspace(self, extraction_task_func):
         dataset = DatasetFactory.create(name="mydataset")
         table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
         mutate_query = """
@@ -120,6 +121,7 @@ class TestTableMutation(GraphQLTestCase):
         assert content["result"]["isAddedToWorkspace"] is True
         table = Table.objects.get(id=table.id)
         assert table.is_added_to_workspace is True
+        extraction_task_func.assert_called_once_with(table.id)
 
     def test_delete_table_from_workspace(self):
         dataset = DatasetFactory.create(name="mydataset")

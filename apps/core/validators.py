@@ -33,7 +33,7 @@ table_properties_schema = {
 
 def get_default_table_properties() -> TablePropertiesDict:
     return {
-        "headerLevel": "1",
+        "headerLevel": "0",
         "timezone": "UTC",
         "language": "en",
         "trimWhitespaces": False,
