@@ -92,7 +92,7 @@ class DatasetType(DjangoObjectType):
 
     @staticmethod
     def resolve_tables(root, info, **kwargs):
-        return Table.objects.filter(dataset=root.id)
+        return Table.objects.filter(dataset=root.id).order_by("-created_at")
 
 
 class DatasetDetailType(DatasetType):
