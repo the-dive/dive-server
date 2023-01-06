@@ -2,6 +2,7 @@ import copy
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils.functional import cached_property
 
 from dive.base_models import BaseModel, NamedModelMixin
 from apps.file.models import File
@@ -58,6 +59,10 @@ class Table(BaseModel, NamedModelMixin):
         cloned_table.name = f"Copy of {self.name}"
         cloned_table.save()
         return cloned_table
+
+    @cached_property
+    def source_type(self):
+        return self.dataset.file.file_type
 
 
 class Column(BaseModel, NamedModelMixin):
