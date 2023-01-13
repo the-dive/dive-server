@@ -164,9 +164,37 @@ class CloneTable(graphene.Mutation):
         return DeleteTableFromWorkspace(result=cloned_table, errors=None, ok=True)
 
 
+class RenameTable(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+        name = graphene.String(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    def mutate(root, info, id, name):
+        try:
+            instance = Table.objects.get(id=id)
+        except Table.DoesNotExist:
+            return RenameTable(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=gettext("Table does not exist."),
+                    )
+                ]
+            )
+        instance.name = name
+        instance.save(update_fields=["name"])
+        return DeleteTableFromWorkspace(result=instance, errors=None, ok=True)
+
+
 class Mutation:
     create_dataset = CreateDataset.Field()
     add_table_to_workspace = AddTableToWorkSpace.Field()
     delete_table_from_workspace = DeleteTableFromWorkspace.Field()
     clone_table = CloneTable.Field()
     update_table_properties = UpdateTableProperties.Field()
+    rename_table = RenameTable.Field()

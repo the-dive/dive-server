@@ -222,3 +222,30 @@ class TestTableMutation(GraphQLTestCase):
         content = resp_data["data"]["updateTableProperties"]
         assert content["ok"] is True
         self.assertEqual(content["result"]["properties"], data)
+
+    def test_rename_table(self):
+        dataset = DatasetFactory.create(name="mydataset")
+        table = TableFactory.create(
+            dataset=dataset, is_added_to_workspace=False, name="Test Table"
+        )
+        mutate_query = """
+            mutation Mutation($tableId: ID! $name: String!) {
+                renameTable(id: $tableId name: $name) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                    }
+                }
+            }
+        """
+        variables = {"tableId": table.id, "name": "New Table"}
+        resp_data = self.query_check(
+            mutate_query,
+            variables=variables,
+        )
+        print(resp_data)
+        content = resp_data["data"]["renameTable"]
+        assert content["ok"] is True
+        self.assertEqual(content["result"]["name"], variables["name"])
