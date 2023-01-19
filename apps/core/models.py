@@ -54,6 +54,7 @@ class Table(BaseModel, NamedModelMixin):
         cloned_table = copy.deepcopy(self)
         cloned_table.pk = None
         cloned_table.cloned_from = self
+        cloned_table.name = f"Copy of {self.name}"
         cloned_table.save()
         return cloned_table
 
