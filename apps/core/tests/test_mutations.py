@@ -245,7 +245,6 @@ class TestTableMutation(GraphQLTestCase):
             mutate_query,
             variables=variables,
         )
-        print(resp_data)
         content = resp_data["data"]["renameTable"]
         assert content["ok"] is True
         self.assertEqual(content["result"]["name"], variables["name"])
