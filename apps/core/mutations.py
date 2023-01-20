@@ -16,6 +16,7 @@ from apps.core.schema import DatasetType, TableType
 from apps.file.serializers import FileSerializer, File
 from apps.core.utils import create_dataset_and_tables
 
+from utils.decorators import lift_mutate_with_instance
 from .serializers import TablePropertiesSerializer
 from .models import Table
 from .utils import apply_table_properties_and_extract_preview
@@ -62,18 +63,8 @@ class AddTableToWorkSpace(DiveMutationMixin):
     result = graphene.Field(TableType)
 
     @staticmethod
-    def mutate(root, info, id, is_added_to_workspace):
-        try:
-            instance = Table.objects.get(id=id)
-        except Table.DoesNotExist:
-            return AddTableToWorkSpace(
-                errors=[
-                    dict(
-                        field="nonFieldErrors",
-                        messages=gettext("Table does not exist."),
-                    )
-                ]
-            )
+    @lift_mutate_with_instance(Table)
+    def mutate(instance, root, info, id, is_added_to_workspace):
         instance.is_added_to_workspace = is_added_to_workspace
         instance.save()
         extract_table_data.delay(instance.id)
@@ -90,18 +81,8 @@ class UpdateTableProperties(graphene.Mutation):
     result = graphene.Field(TableType)
 
     @staticmethod
-    def mutate(root, info, id, data):
-        try:
-            instance = Table.objects.get(id=id)
-        except Table.DoesNotExist:
-            return UpdateTableProperties(
-                errors=[
-                    dict(
-                        field="nonFieldErrors",
-                        messages=gettext("Table does not exist."),
-                    )
-                ]
-            )
+    @lift_mutate_with_instance(Table)
+    def mutate(instance, root, info, id, data):
         serializer = TablePropertiesSerializer(
             data=data, context={"request": info.context.request}
         )
@@ -125,18 +106,8 @@ class DeleteTableFromWorkspace(graphene.Mutation):
     result = graphene.Field(TableType)
 
     @staticmethod
-    def mutate(root, info, id):
-        try:
-            instance = Table.objects.get(id=id)
-        except Table.DoesNotExist:
-            return DeleteTableFromWorkspace(
-                errors=[
-                    dict(
-                        field="nonFieldErrors",
-                        messages=gettext("Table does not exist."),
-                    )
-                ]
-            )
+    @lift_mutate_with_instance(Table)
+    def mutate(instance, root, info, id):
         instance.is_added_to_workspace = False
         instance.save()
         return DeleteTableFromWorkspace(result=instance, errors=None, ok=True)
@@ -151,18 +122,8 @@ class CloneTable(graphene.Mutation):
     result = graphene.Field(TableType)
 
     @staticmethod
-    def mutate(root, info, id):
-        try:
-            instance = Table.objects.get(id=id)
-        except Table.DoesNotExist:
-            return CloneTable(
-                errors=[
-                    dict(
-                        field="nonFieldErrors",
-                        messages=gettext("Table does not exist."),
-                    )
-                ]
-            )
+    @lift_mutate_with_instance(Table)
+    def mutate(instance, root, info, id):
         cloned_table = instance.clone()
         return DeleteTableFromWorkspace(result=cloned_table, errors=None, ok=True)
 
@@ -177,18 +138,8 @@ class RenameTable(graphene.Mutation):
     result = graphene.Field(TableType)
 
     @staticmethod
-    def mutate(root, info, id, name):
-        try:
-            instance = Table.objects.get(id=id)
-        except Table.DoesNotExist:
-            return RenameTable(
-                errors=[
-                    dict(
-                        field="nonFieldErrors",
-                        messages=gettext("Table does not exist."),
-                    )
-                ]
-            )
+    @lift_mutate_with_instance(Table)
+    def mutate(instance, root, info, id, name):
         instance.name = name
         instance.save(update_fields=["name"])
         return DeleteTableFromWorkspace(result=instance, errors=None, ok=True)
