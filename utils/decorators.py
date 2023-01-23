@@ -9,6 +9,7 @@ def lift_mutate_with_instance(ModelClass):
     NOTE: The decorated function will have the model instance as the first argument
     and the rest arguments are similar to the original mutate function
     """
+
     def wrapper(f):
         def mutate(root, info, id, *args, **kwargs):
             try:
@@ -24,5 +25,7 @@ def lift_mutate_with_instance(ModelClass):
                 )
             else:
                 return f(instance, root, info, id, *args, **kwargs)
+
         return mutate
+
     return wrapper

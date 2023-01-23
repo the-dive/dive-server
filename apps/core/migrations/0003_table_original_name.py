@@ -6,14 +6,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0002_table_cloned_from'),
+        ("core", "0002_table_cloned_from"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='table',
-            name='original_name',
-            field=models.CharField(default='', max_length=255),
+            model_name="table",
+            name="original_name",
+            field=models.CharField(default="", max_length=255),
             preserve_default=False,
         ),
     ]
