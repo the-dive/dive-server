@@ -77,13 +77,21 @@ class Column(BaseModel, NamedModelMixin):
         choices=ColumnTypes.choices,
     )
     properties = models.JSONField(default=dict)
-    stats = models.JSONField(default=dict)
+    stats = models.JSONField(default=dict)  # TODO: type and validate this
     stats_calculation_status = models.CharField(
         max_length=20,
         choices=StatsStatus.choices,
         default=StatsStatus.PENDING,
     )
     extra_data = models.JSONField(default=dict)
+
+
+class Snapshot(BaseModel):
+    table = models.ForeignKey(Table, on_delete=models.CASCADE)
+    version = models.PositiveIntegerField()
+    data_rows = models.JSONField()
+    data_columns = models.JSONField()
+    column_stats = models.JSONField()
 
 
 class Action(BaseModel, NamedModelMixin):

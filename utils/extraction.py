@@ -1,16 +1,18 @@
-from typing import Tuple, Optional, Union, cast, Any, TypedDict, List, Type
+from typing import Tuple, Optional, Union, cast, Any, TypedDict, List, Type, Dict
 import pandas as pd
 import numpy as np
 
 from .common import ColumnTypes
-from apps.core.types import TablePropertiesDict
+from apps.core.types import TablePropertiesDict, ExtractedData
 
 
-PreviewResult = Union[Tuple[dict, Optional[str]], Tuple[Optional[dict], str]]
+PreviewResult = Union[
+    Tuple[ExtractedData, Optional[str]], Tuple[Optional[ExtractedData], str]
+]
 
-ColumnObject = TypedDict(
-    "ColumnObject", {"key": str, "label": str, "type": ColumnTypes}
-)
+ColumnObject = TypedDict("ColumnObject", {"key": str, "label": str, "type": Any})
+
+INFINITY = 999999
 
 
 def get_col_type_from_pd_type(pd_type):
@@ -29,20 +31,31 @@ def extract_preview_data_from_excel(
     sheetname: str,
     table_properties: TablePropertiesDict,
 ) -> PreviewResult:
+    return extract_data_from_excel(xl, sheetname, table_properties, is_preview=True)
+
+
+def extract_data_from_excel(
+    xl: pd.ExcelFile,
+    sheetname: str,
+    table_properties: TablePropertiesDict,
+    is_preview: bool = False,
+    calculate_stats=False,
+) -> PreviewResult:
 
     header_level = parse_int(table_properties["headerLevel"]) or 0
     # extract and save other header levels if header_level >= 1
     extra_headers: List[List[str]] = (
-        extract_extra_headers(xl, sheetname, header_level)
-        if header_level > 0
-        else []
+        extract_extra_headers(xl, sheetname, header_level) if header_level > 0 else []
     )
 
-    df: pd.DataFrame = cast(pd.DataFrame, xl.parse(
-        sheetname,
-        nrows=50,
-        header=header_level,
-    ))
+    df: pd.DataFrame = cast(
+        pd.DataFrame,
+        xl.parse(
+            sheetname,
+            nrows=50 if is_preview else None,
+            header=header_level,
+        ),
+    )
     na_replacement = {
         pd.NaT: None,
         np.nan: None,
@@ -54,7 +67,7 @@ def extract_preview_data_from_excel(
     # Store map of column index and type information
     coltypes = {i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)}
 
-    df_dict = df.to_dict()
+    df_dict: Dict[str, list] = df.to_dict("list")
 
     columns: List[ColumnObject] = [
         {
@@ -65,26 +78,34 @@ def extract_preview_data_from_excel(
         for i, col in enumerate(df_dict.keys())
     ]
 
+    trimWhitespaces = table_properties.get("trimWhitespaces", False)
+
     def get_ith_row_from_df(i):
         # Add an attribute key to each the row item, it's okay if it is later replaced
         # It's just that we need to have a unique key field in each row
-        row = {"key": i}
+        row: Dict[str, Any] = {"key": str(i)}
         for j, col in enumerate(df.columns):
             parsed = parse(df.loc[i, col], coltypes[j])
-            should_strip = coltypes[j] == ColumnTypes.STRING and table_properties.get("trimWhitespaces", False)
+            should_strip = coltypes[j] == ColumnTypes.STRING and trimWhitespaces
             row[str(j)] = str(parsed).strip() if should_strip else parsed
         return row
 
     rows = [get_ith_row_from_df(i) for i in range(len(df))]
 
-    return {
+    extracted: ExtractedData = {
         "rows": rows,
         "columns": columns,
         "extra_headers": extra_headers,
-    }, None
+        "column_stats": calculate_column_stats(df_dict, coltypes)
+        if calculate_stats
+        else None,
+    }
+    return extracted, None
 
 
-def extract_extra_headers(xl: pd.ExcelFile, sheetname: str, header_level: int) -> List[List[str]]:
+def extract_extra_headers(
+    xl: pd.ExcelFile, sheetname: str, header_level: int
+) -> List[List[str]]:
     if header_level < 1:
         # There's nothing to read before header 1
         return []
@@ -99,22 +120,63 @@ def extract_extra_headers(xl: pd.ExcelFile, sheetname: str, header_level: int) -
     return [[str(e) for e in row] for row in df.itertuples(index=False)]
 
 
-def extract_data_from_excel(
-    xl: pd.ExcelFile,
-    sheetname: str,
-    table_properties: TablePropertiesDict,
-):
-    header_level = parse_int(table_properties["headerLevel"]) or 0
-    df: pd.DataFrame = cast(pd.DataFrame, xl.parse(sheetname, header=header_level))
-    na_replacement = {
-        pd.NaT: None,
-        np.nan: None,
-        table_properties.get("treatTheseAsNa"): None,
+def calculate_column_stats(df_dict: dict, coltypes: Dict[int, ColumnTypes]):
+    """
+    Calculate column wise stats.
+    df_dict is a dict of the form:
+        {
+            col1: [item1, item2, ...],
+            col2: [item1, item2, ...],
+        }
+    which is the result of dataframe.to_dict()
+    """
+    column_stats = []
+    for colname, coltype in zip(df_dict.keys(), coltypes.values()):
+        if coltype == ColumnTypes.INTEGER:
+            column_stats.append(calculate_stats_for_numeric_col(df_dict[colname]))
+        elif coltype == ColumnTypes.FLOATING:
+            column_stats.append(calculate_stats_for_numeric_col(df_dict[colname]))
+        else:
+            column_stats.append(calculate_stats_for_string_col(df_dict[colname]))
+    return column_stats
+
+
+def calculate_stats_for_numeric_col(items: list):
+    # TODO: optimize the list(use np/pd). But this should happen from the extraction phase itself
+    return {
+        "min": np.min(items),
+        "max": np.max(items),
+        "mean": np.mean(items),
+        "median": np.median(items),
+        "std_deviation": np.std(items),
+        "total_count": len(items),
+        "na_count": len([x for x in items if x is None]),
     }
-    df.replace(na_replacement, inplace=True)
 
 
-def parse(val: Any, coltype: ColumnTypes) -> str | int | float | None:
+def calculate_stats_for_string_col(items: list):
+    max_len = 0
+    min_len = INFINITY
+    for x in items:
+        if x is None:
+            continue
+        length = len(x)
+        if length > max_len:
+            max_len = length
+        if length < min_len:
+            min_len = length
+
+    # TODO: optimize the following calculations
+    return {
+        "total_count": len(items),
+        "na_count": len([x for x in items if x is None]),
+        "unique_count": len(set(items)),
+        "max_length": max_len,
+        "min_length": min_len,
+    }
+
+
+def parse(val: Any, coltype: Any) -> str | int | float | None:
     # TODO: Integer/Float precision
     if coltype == ColumnTypes.INTEGER:
         return parse_int(val)

@@ -95,7 +95,7 @@ class TestDatasetMutation(GraphQLFileUploadTestCase, GraphQLTestCase):
 
 @override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
 class TestTableMutation(GraphQLTestCase):
-    @mock.patch('apps.core.mutations.extract_table_data.delay')
+    @mock.patch("apps.core.mutations.extract_table_data.delay")
     def test_add_to_workspace(self, extraction_task_func):
         dataset = DatasetFactory.create(name="mydataset")
         table = TableFactory.create(dataset=dataset, is_added_to_workspace=False)
@@ -186,7 +186,7 @@ class TestTableMutation(GraphQLTestCase):
         self.assertEqual(content["result"]["clonedFrom"]["name"], table.name)
         self.assertEqual(content["result"]["clonedFrom"]["id"], str(table.id))
 
-    @mock.patch('apps.core.mutations.apply_table_properties_and_extract_preview')
+    @mock.patch("apps.core.mutations.apply_table_properties_and_extract_preview")
     def test_update_table_properties(self, apply_table_properties_func):
         file = create_test_file(TEST_FILE_PATH)
         dataset = DatasetFactory.create(name="mydataset", file=file)
