@@ -8,7 +8,7 @@ from django.conf import settings
 
 from apps.core.utils import create_dataset_and_tables
 
-from .utils import create_test_file
+from dive.base_test import create_test_file
 
 
 TEST_MEDIA_DIR = os.path.join(settings.TEST_DIR, "media")

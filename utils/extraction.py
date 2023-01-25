@@ -1,4 +1,14 @@
-from typing import Tuple, Optional, Union, cast, Any, TypedDict, List, Type, Dict
+from typing import (
+    Tuple,
+    Optional,
+    Union,
+    cast,
+    Any,
+    TypedDict,
+    List,
+    Type,
+    Dict,
+)
 import pandas as pd
 import numpy as np
 
@@ -144,11 +154,11 @@ def calculate_column_stats(df_dict: dict, coltypes: Dict[int, ColumnTypes]):
 def calculate_stats_for_numeric_col(items: list):
     # TODO: optimize the list(use np/pd). But this should happen from the extraction phase itself
     return {
-        "min": np.min(items),
-        "max": np.max(items),
-        "mean": np.mean(items),
-        "median": np.median(items),
-        "std_deviation": np.std(items),
+        "min": float(np.min(items)),
+        "max": float(np.max(items)),
+        "mean": float(np.mean(items)),
+        "median": float(np.median(items)),
+        "std_deviation": float(np.std(items)),
         "total_count": len(items),
         "na_count": len([x for x in items if x is None]),
     }

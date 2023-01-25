@@ -1,5 +1,5 @@
-Addresses xxxxxx (eg: #1 dive/dive-server#1) \
-Depends on xxxxxx (eg: #1 dive/dive-server#1)
+Resolves xxx (eg: #1 dive/dive-server#1) \
+Depends on xxx (eg: #1 dive/dive-server#1)
 
 ## Changes
 

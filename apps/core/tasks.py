@@ -26,17 +26,16 @@ def extract_table_data(table_id: int):
         if extracted_data is None:
             logger.warning(f"Error extracting data: {err}")
             return
-        create_snapshot_and_calculate_stats(table, extracted_data)
+        create_snapshot_from_extracted_data(table, extracted_data)
     else:
         raise Exception(f"Extraction for {table.source_type} not implemented")
 
 
-def create_snapshot_and_calculate_stats(table: Table, extracted_data: ExtractedData):
-    snapshot = Snapshot.objects.create(
+def create_snapshot_from_extracted_data(table: Table, extracted_data: ExtractedData):
+    return Snapshot.objects.create(
         table=table,
         version=1,
         data_rows=extracted_data["rows"],
         data_columns=extracted_data["columns"],
+        column_stats=extracted_data["column_stats"],
     )
-
-    # Calculate column stats
