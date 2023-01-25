@@ -13,7 +13,7 @@ from dive.base_test import assert_object_created, TEST_MEDIA_DIR, TEST_FILE_PATH
 from apps.core.models import Dataset, Table
 from apps.core.factories import DatasetFactory, TableFactory
 
-from .utils import create_test_file
+from dive.base_test import create_test_file
 
 
 _pd_excel = pd.ExcelFile(TEST_FILE_PATH)

@@ -1,42 +1,18 @@
 import os
 import pandas as pd
 
-from dive.base_test import BaseAPITestCase
-from apps.core.validators import get_default_table_properties
+from django.test import override_settings
+from django.conf import settings
+
+from dive.base_test import BaseTestWithDataFrameAndExcel, DATA, NUM_ROWS
 from utils.extraction import extract_data_from_excel
 from utils.common import ColumnTypes
 
-
-NUM_ROWS = 10
-DATA = {
-    "id": [x for x in range(1, NUM_ROWS + 1)],
-    "name": [
-        "Sam",
-        "Morgan",
-        "Rishi",
-        "Shreeyash",
-        "Sameer",
-        "Bibek",
-        "",
-        "Patrice",
-        "Ram",
-        "Sita",
-    ],
-    "income": [x * 2000 for x in range(1, NUM_ROWS + 1)],
-}
-
-DATAFRAME = pd.DataFrame(data=DATA)
+TEST_MEDIA_DIR = os.path.join(settings.TEST_DIR, "media")
 
 
-class TestExtraction(BaseAPITestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.default_table_properties = get_default_table_properties()
-
-    def setUp(self):
-        self.excel_file_path = "test_result.xlsx"
-        DATAFRAME.to_excel(self.excel_file_path, index=False)
-
+@override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
+class TestExtraction(BaseTestWithDataFrameAndExcel):
     def parse_excel_and_check_valid(
         self, properties, is_preview=True, calculate_stats=False
     ):
@@ -141,7 +117,6 @@ class TestExtraction(BaseAPITestCase):
         assert "rows" in extraction_data
         assert "columns" in extraction_data
         assert extraction_data.get("column_stats") is not None
-        print(extraction_data["column_stats"])
 
         # NOTE: The following are dependent on the global DATA defined in the beginning of this file
         id_stats = extraction_data["column_stats"][0]

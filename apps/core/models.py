@@ -6,7 +6,6 @@ from django.utils.functional import cached_property
 
 from dive.base_models import BaseModel, NamedModelMixin
 from apps.file.models import File
-from utils.common import ColumnTypes
 from .validators import validate_table_properties, get_default_table_properties
 
 
@@ -33,6 +32,7 @@ class Table(BaseModel, NamedModelMixin):
         PENDING = "pending", _("Pending")
         EXTRACTED = "extracted", _("Extracted")
 
+    # This is the original name of the table(sheet name in case of excel or the file name in case of csvs)
     original_name = models.CharField(max_length=255)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
     status = models.CharField(
@@ -60,30 +60,31 @@ class Table(BaseModel, NamedModelMixin):
         cloned_table.save()
         return cloned_table
 
+    @property
+    def last_snapshot(self):
+        Snapshot.objects.filter(table=self).order_by("-created_at").first()
+
+    @property
+    def data_rows(self):
+        if self.last_snapshot is None:
+            return []
+        return self.last_snapshot.data_rows
+
+    @property
+    def data_columns(self):
+        if self.last_snapshot is None:
+            return []
+        return self.last_snapshot.data_columns
+
+    @property
+    def data_column_stats(self):
+        if self.last_snapshot is None:
+            return []
+        return self.last_snapshot.column_stats
+
     @cached_property
     def source_type(self):
         return self.dataset.file.file_type
-
-
-class Column(BaseModel, NamedModelMixin):
-    class StatsStatus(models.TextChoices):
-        PENDING = "pending", _("Pending")
-        COMPLETED = "completed", _("Completed")
-        ERRORED = "errored", _("Errored")
-
-    table = models.ForeignKey(Table, on_delete=models.CASCADE)
-    type = models.CharField(
-        max_length=50,
-        choices=ColumnTypes.choices,
-    )
-    properties = models.JSONField(default=dict)
-    stats = models.JSONField(default=dict)  # TODO: type and validate this
-    stats_calculation_status = models.CharField(
-        max_length=20,
-        choices=StatsStatus.choices,
-        default=StatsStatus.PENDING,
-    )
-    extra_data = models.JSONField(default=dict)
 
 
 class Snapshot(BaseModel):
@@ -100,7 +101,6 @@ class Action(BaseModel, NamedModelMixin):
         TABLE_WISE = "table-wise", _("Table Wise")
 
     table = models.ForeignKey(Table, null=True, on_delete=models.SET_NULL)
-    column = models.ForeignKey(Column, null=True, on_delete=models.SET_NULL)
     snapshot_version = models.CharField(max_length=20)
     type = models.CharField(
         max_length=20,
