@@ -27,6 +27,7 @@ env = environ.Env(
     DEBUG=(bool, True),
     SECRET_KEY=(str),
     DJANGO_ALLOWED_HOST=(str, "*"),
+    CSRF_TRUSTED_ORIGINS=(list, []),
     POSTGRES_NAME=(str, "postgres"),
     POSTGRES_USER=(str, "postgres"),
     POSTGRES_PWD=(str, "postgres"),
@@ -46,6 +47,7 @@ env = environ.Env(
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
