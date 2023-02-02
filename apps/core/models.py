@@ -94,6 +94,9 @@ class Snapshot(BaseModel):
     data_columns = models.JSONField()
     column_stats = models.JSONField()
 
+    def __str__(self):
+        return f"{self.table.original_name} - {self.version}"
+
 
 class Action(BaseModel, NamedModelMixin):
     class ActionType(models.TextChoices):

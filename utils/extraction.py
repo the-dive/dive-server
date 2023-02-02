@@ -141,17 +141,23 @@ def calculate_column_stats(df_dict: dict, coltypes: Dict[int, ColumnTypes]):
     which is the result of dataframe.to_dict()
     """
     column_stats = []
-    for colname, coltype in zip(df_dict.keys(), coltypes.values()):
+    for index, (colname, coltype) in enumerate(zip(df_dict.keys(), coltypes.values())):
         if coltype == ColumnTypes.INTEGER:
-            column_stats.append(calculate_stats_for_numeric_col(df_dict[colname]))
+            column_stats.append(
+                calculate_stats_for_numeric_col(df_dict[colname], index, colname)
+            )
         elif coltype == ColumnTypes.FLOATING:
-            column_stats.append(calculate_stats_for_numeric_col(df_dict[colname]))
+            column_stats.append(
+                calculate_stats_for_numeric_col(df_dict[colname], index, colname)
+            )
         else:
-            column_stats.append(calculate_stats_for_string_col(df_dict[colname]))
+            column_stats.append(
+                calculate_stats_for_string_col(df_dict[colname], index, colname)
+            )
     return column_stats
 
 
-def calculate_stats_for_numeric_col(items: list):
+def calculate_stats_for_numeric_col(items: list, index: int, colname: str):
     # TODO: optimize the list(use np/pd). But this should happen from the extraction phase itself
     return {
         "min": float(np.min(items)),
@@ -161,10 +167,12 @@ def calculate_stats_for_numeric_col(items: list):
         "std_deviation": float(np.std(items)),
         "total_count": len(items),
         "na_count": len([x for x in items if x is None]),
+        "key": index,
+        "label": colname,
     }
 
 
-def calculate_stats_for_string_col(items: list):
+def calculate_stats_for_string_col(items: list, index: int, colname: str):
     max_len = 0
     min_len = INFINITY
     for x in items:
@@ -183,6 +191,8 @@ def calculate_stats_for_string_col(items: list):
         "unique_count": len(set(items)),
         "max_length": max_len,
         "min_length": min_len,
+        "key": index,
+        "label": colname,
     }
 
 
