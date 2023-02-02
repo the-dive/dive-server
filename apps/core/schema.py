@@ -1,7 +1,10 @@
 import graphene
 from graphene_django import DjangoObjectType, DjangoListField
 from graphene.types.generic import GenericScalar
-from graphene_django_extras import PageGraphqlPagination, DjangoObjectField
+from graphene_django_extras import (
+    PageGraphqlPagination,
+    DjangoObjectField,
+)
 
 from utils.graphene.types import CustomDjangoListObjectType
 from utils.graphene.fields import DjangoPaginatedListObjectField
@@ -10,6 +13,7 @@ from utils.graphene.enums import EnumDescription
 from apps.core.models import (
     Dataset,
     Table,
+    Snapshot,
 )
 from apps.core.filter_set import DatasetFilter, TableFilter
 from dive.consts import (
@@ -52,6 +56,17 @@ class TablePropertiesType(graphene.ObjectType):
         return root.get("treatTheseAsNa")
 
 
+class TableRows(graphene.ObjectType):
+    data_rows = GenericScalar()
+
+    def resolve_data_rows(root, info, **kwargs):
+        return (
+            Snapshot.objects.filter(table=root.id)
+            .order_by("-version")
+            .values_list("data_rows")[0]
+        )
+
+
 class TableType(DjangoObjectType):
     class Meta:
         model = Table
@@ -63,12 +78,29 @@ class TableType(DjangoObjectType):
             "preview_data",
             "properties",
             "cloned_from",
+            "data_column_stats",
+            "data_rows",
         )
 
     status_display = EnumDescription(source="get_status_display")
     preview_data = GenericScalar()
     properties = graphene.Field(TablePropertiesType)
+    data_column_stats = GenericScalar()
+    data_rows = GenericScalar()
 
+    def resolve_data_column_stats(root, info, **kwargs):
+        return (
+            Snapshot.objects.filter(table=root.id)
+            .order_by("-version")
+            .values_list("column_stats")[0]
+        )
+
+    def resolve_data_rows(root, info, **kwargs):
+        return (
+            Snapshot.objects.filter(table=root.id)
+            .order_by("-version")
+            .values_list("data_rows")[0]
+        )
 
 class TableListType(CustomDjangoListObjectType):
     class Meta:
