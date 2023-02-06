@@ -62,7 +62,7 @@ class Table(BaseModel, NamedModelMixin):
 
     @property
     def last_snapshot(self):
-        Snapshot.objects.filter(table=self).order_by("-created_at").first()
+        return Snapshot.objects.filter(table=self).order_by("-created_at").first()
 
     @property
     def data_rows(self):

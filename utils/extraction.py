@@ -167,7 +167,7 @@ def calculate_stats_for_numeric_col(items: list, index: int, colname: str):
         "std_deviation": float(np.std(items)),
         "total_count": len(items),
         "na_count": len([x for x in items if x is None]),
-        "key": index,
+        "key": str(index),
         "label": colname,
     }
 
@@ -191,7 +191,7 @@ def calculate_stats_for_string_col(items: list, index: int, colname: str):
         "unique_count": len(set(items)),
         "max_length": max_len,
         "min_length": min_len,
-        "key": index,
+        "key": str(index),
         "label": colname,
     }
 
