@@ -43,7 +43,6 @@ class CustomListObjectType(ObjectType):
         filterset_class=None,
         **options,
     ):
-
         assert (
             base_type is not None
         ), "Base Type of the ListField should be defined in the Meta."
@@ -124,7 +123,6 @@ class CustomDjangoListObjectType(DjangoListObjectType):
         base_type=None,
         **options,
     ):
-
         assert is_valid_django_model(model), (
             'You need to pass a valid Django Model in {}.Meta, received "{}".'
         ).format(cls.__name__, model)
@@ -208,7 +206,6 @@ class CustomDjangoListObjectType(DjangoListObjectType):
 
 
 class FileFieldType(graphene.ObjectType):
-
     name = graphene.String()
     url = graphene.String()
 
