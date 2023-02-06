@@ -94,7 +94,10 @@ def extract_data_from_excel(
         # It's just that we need to have a unique key field in each row
         row: Dict[str, Any] = {"key": str(i)}
         for j, col in enumerate(df.columns):
-            parsed = parse(df.loc[i, col], coltypes[j])
+            # Convert to strval before parsing, parser takes only string as input
+            val = df.loc[i, col]
+            strval = str(val) if val is not None else None
+            parsed = parse(strval, coltypes[j])
             should_strip = coltypes[j] == ColumnTypes.STRING and trimWhitespaces
             row[str(j)] = str(parsed).strip() if should_strip else parsed
         return row

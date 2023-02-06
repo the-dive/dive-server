@@ -1,9 +1,9 @@
-from typing import Type, Any
+from typing import Type, Any, Optional
 
 from .common import ColumnTypes
 
 
-def parse(val: Any, coltype: Any) -> str | int | float | None:
+def parse(val: Optional[str], coltype: Any) -> str | int | float | None:
     # TODO: Integer/Float precision
     if coltype == ColumnTypes.INTEGER:
         return parse_int(val)
@@ -12,16 +12,16 @@ def parse(val: Any, coltype: Any) -> str | int | float | None:
     return val and str(val)
 
 
-def parse_type(typ: Type, val: Any):
+def parse_type(typ: Type, val: Optional[str]):
     try:
         return typ(val)
     except (TypeError, ValueError):
         return None
 
 
-def parse_int(val: Any):
+def parse_int(val: Optional[str]):
     return parse_type(int, val)
 
 
-def parse_float(val: Any):
+def parse_float(val: Optional[str]):
     return parse_type(float, val)
