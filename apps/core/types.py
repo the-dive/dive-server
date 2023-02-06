@@ -1,6 +1,9 @@
-from typing import TypedDict, Optional, List, Dict, Any
+from typing import TypedDict, Optional, List, Dict, Any, Tuple
 
 from utils.common import ColumnTypes
+
+
+Validation = Tuple[bool, Optional[str]]
 
 
 class TablePropertiesDict(TypedDict):

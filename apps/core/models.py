@@ -1,4 +1,5 @@
 import copy
+from typing import Optional
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -61,7 +62,7 @@ class Table(BaseModel, NamedModelMixin):
         return cloned_table
 
     @property
-    def last_snapshot(self):
+    def last_snapshot(self) -> Optional["Snapshot"]:
         return Snapshot.objects.filter(table=self).order_by("-created_at").first()
 
     @property
@@ -90,6 +91,7 @@ class Table(BaseModel, NamedModelMixin):
 class Snapshot(BaseModel):
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
     version = models.PositiveIntegerField()
+    # TODO: validation and types for json fields
     data_rows = models.JSONField()
     data_columns = models.JSONField()
     column_stats = models.JSONField()
@@ -99,20 +101,23 @@ class Snapshot(BaseModel):
 
 
 class Action(BaseModel, NamedModelMixin):
-    class ActionType(models.TextChoices):
-        COLUMN_WISE = "column-wise", _("Column Wise")
-        TABLE_WISE = "table-wise", _("Table Wise")
+    """
+    Every action is associated with a table(and possibly a column)
+    Try to model these as functions. Examples:
+    1. Casting Column: cast(column, target_type)
+    2. Deleting a Column: delete(column)
+    """
 
-    table = models.ForeignKey(Table, null=True, on_delete=models.SET_NULL)
-    snapshot_version = models.CharField(max_length=20)
-    type = models.CharField(
-        max_length=20,
-        choices=ActionType.choices,
-    )
+    table = models.ForeignKey(Table, on_delete=models.CASCADE)
+    snapshot = models.ForeignKey(Snapshot, null=True, on_delete=models.SET_NULL)
     order = models.PositiveIntegerField()
     # TODO: JSON validations for parameters
-    parameters = models.JSONField(default=dict)
-    extra_data = models.JSONField(default=dict)
+    parameters = models.JSONField(default=list)
 
     class Meta:
-        unique_together = ("table", "snapshot_version", "order")
+        unique_together = ("table", "order")
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise Exception("Cannot update action after creation")
+        super().save(*args, **kwargs)
