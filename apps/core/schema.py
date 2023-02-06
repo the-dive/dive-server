@@ -115,8 +115,8 @@ class DatasetListType(CustomDjangoListObjectType):
 
 
 class KeyLabelType(graphene.ObjectType):
-    key = graphene.String()
-    label = graphene.String()
+    key = graphene.String(required=True)
+    label = graphene.String(required=True)
 
 
 class ColumnPropertiesOptionsType(graphene.ObjectType):

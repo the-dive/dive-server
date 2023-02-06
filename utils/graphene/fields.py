@@ -86,7 +86,6 @@ class CustomPaginatedListObjectField(DjangoFilterPaginateListField):
         *args,
         **kwargs,
     ):
-
         kwargs.setdefault("args", {})
 
         filterset_class = filterset_class or _type._meta.filterset_class
@@ -112,7 +111,6 @@ class CustomPaginatedListObjectField(DjangoFilterPaginateListField):
         super(DjangoFilterPaginateListField, self).__init__(_type, *args, **kwargs)
 
     def list_resolver(self, filterset_class, filtering_args, root, info, **kwargs):
-
         filter_kwargs = {k: v for k, v in kwargs.items() if k in filtering_args}
         qs = getattr(root, self.accessor)
         if hasattr(qs, "all"):

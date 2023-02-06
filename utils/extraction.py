@@ -51,7 +51,6 @@ def extract_data_from_excel(
     is_preview: bool = False,
     calculate_stats=False,
 ) -> PreviewResult:
-
     header_level = parse_int(table_properties["headerLevel"]) or 0
     # extract and save other header levels if header_level >= 1
     extra_headers: List[List[str]] = (
