@@ -130,6 +130,8 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
             "total_count",
             "std_deviation",
             "na_count",
+            "key",
+            "label",
         }
         assert set(income_stats.keys()) == {
             "min",
@@ -139,6 +141,8 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
             "total_count",
             "std_deviation",
             "na_count",
+            "key",
+            "label",
         }
         assert set(name_stats.keys()) == {
             "total_count",
@@ -146,6 +150,8 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
             "unique_count",
             "max_length",
             "min_length",
+            "key",
+            "label",
         }
 
     def tearDown(self):
