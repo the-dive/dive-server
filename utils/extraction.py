@@ -6,13 +6,13 @@ from typing import (
     Any,
     TypedDict,
     List,
-    Type,
     Dict,
 )
 import pandas as pd
 import numpy as np
 
 from .common import ColumnTypes
+from .parsing import parse_int, parse
 from apps.core.types import TablePropertiesDict, ExtractedData
 
 
@@ -193,27 +193,3 @@ def calculate_stats_for_string_col(items: list, index: int, colname: str):
         "key": str(index),
         "label": colname,
     }
-
-
-def parse(val: Any, coltype: Any) -> str | int | float | None:
-    # TODO: Integer/Float precision
-    if coltype == ColumnTypes.INTEGER:
-        return parse_int(val)
-    elif coltype == ColumnTypes.FLOATING:
-        return parse_float(val)
-    return val and str(val)
-
-
-def parse_type(typ: Type, val: Any):
-    try:
-        return typ(val)
-    except (TypeError, ValueError):
-        return None
-
-
-def parse_int(val: Any):
-    return parse_type(int, val)
-
-
-def parse_float(val: Any):
-    return parse_type(float, val)

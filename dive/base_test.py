@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase, APIClient  # type: ignore
 
 from utils.helpers import generate_random_key
 from apps.core.validators import get_default_table_properties
+from apps.core.utils import create_dataset_and_tables
 
 User = get_user_model()
 
@@ -107,6 +108,15 @@ class BaseTestWithDataFrameAndExcel(TestCase):
     def setUp(self):
         self.excel_file_path = "test_result.xlsx"
         DATAFRAME.to_excel(self.excel_file_path, index=False)
+
+        file_name = "test.xlsx"
+        file_obj = create_test_file(self.excel_file_path, file_name=file_name)
+        self.dataset = create_dataset_and_tables(file_obj)
+
+    def tearDown(self):
+        """Remove file path"""
+        if os.path.exists(self.excel_file_path):
+            os.remove(self.excel_file_path)
 
 
 def create_test_file(file_path: str, file_name="test.xlsx") -> File:
