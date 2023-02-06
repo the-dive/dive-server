@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0003_snapshot_remove_action_column_table_original_name_and_more"),
     ]
