@@ -132,6 +132,7 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
             "na_count",
             "key",
             "label",
+            "type",
         }
         assert set(income_stats.keys()) == {
             "min",
@@ -143,6 +144,7 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
             "na_count",
             "key",
             "label",
+            "type",
         }
         assert set(name_stats.keys()) == {
             "total_count",
@@ -152,6 +154,7 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
             "min_length",
             "key",
             "label",
+            "type",
         }
 
     def tearDown(self):

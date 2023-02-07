@@ -3,13 +3,17 @@ from typing import Type, Any, Optional
 from .common import ColumnTypes
 
 
-def parse(val: Optional[str], coltype: Any) -> str | int | float | None:
+def parse(val: Optional[Any], coltype: Any) -> str | int | float | None:
     # TODO: Integer/Float precision
+    if val is None:
+        return None
+    # Convert to string first
+    strval = str(val)
     if coltype == ColumnTypes.INTEGER:
-        return parse_int(val)
+        return parse_int(strval)
     elif coltype == ColumnTypes.FLOATING:
-        return parse_float(val)
-    return val and str(val)
+        return parse_float(strval)
+    return strval
 
 
 def parse_type(typ: Type, val: Optional[str]):

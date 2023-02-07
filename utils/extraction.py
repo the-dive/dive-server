@@ -4,7 +4,6 @@ from typing import (
     Union,
     cast,
     Any,
-    TypedDict,
     List,
     Dict,
 )
@@ -13,19 +12,17 @@ import numpy as np
 
 from .common import ColumnTypes
 from .parsing import parse_int, parse
-from apps.core.types import TablePropertiesDict, ExtractedData
+from apps.core.types import TablePropertiesDict, ExtractedData, ColumnStats, Column
 
 
 PreviewResult = Union[
     Tuple[ExtractedData, Optional[str]], Tuple[Optional[ExtractedData], str]
 ]
 
-ColumnObject = TypedDict("ColumnObject", {"key": str, "label": str, "type": Any})
-
 INFINITY = 999999
 
 
-def get_col_type_from_pd_type(pd_type):
+def get_col_type_from_pd_type(pd_type) -> ColumnTypes:
     pd_type_str = str(pd_type)
     if "int" in pd_type_str:
         return ColumnTypes.INTEGER
@@ -74,11 +71,11 @@ def extract_data_from_excel(
     df.replace(na_replacement, inplace=True)
 
     # Store map of column index and type information
-    coltypes = {i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)}
+    coltypes: Dict[int, ColumnTypes] = {i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)}
 
     df_dict: Dict[str, list] = df.to_dict("list")
 
-    columns: List[ColumnObject] = [
+    columns: List[Column] = [
         {
             "key": str(i),
             "label": str(col),
@@ -94,10 +91,8 @@ def extract_data_from_excel(
         # It's just that we need to have a unique key field in each row
         row: Dict[str, Any] = {"key": str(i)}
         for j, col in enumerate(df.columns):
-            # Convert to strval before parsing, parser takes only string as input
             val = df.loc[i, col]
-            strval = str(val) if val is not None else None
-            parsed = parse(strval, coltypes[j])
+            parsed = parse(val, coltypes[j])
             should_strip = coltypes[j] == ColumnTypes.STRING and trimWhitespaces
             row[str(j)] = str(parsed).strip() if should_strip else parsed
         return row
@@ -145,21 +140,23 @@ def calculate_column_stats(df_dict: dict, coltypes: Dict[int, ColumnTypes]):
     column_stats = []
     for index, (colname, coltype) in enumerate(zip(df_dict.keys(), coltypes.values())):
         if coltype == ColumnTypes.INTEGER:
-            column_stats.append(
-                calculate_stats_for_numeric_col(df_dict[colname], index, colname)
-            )
+            stats_data = calculate_stats_for_numeric_col(df_dict[colname])
         elif coltype == ColumnTypes.FLOATING:
-            column_stats.append(
-                calculate_stats_for_numeric_col(df_dict[colname], index, colname)
-            )
+            stats_data = calculate_stats_for_numeric_col(df_dict[colname])
         else:
-            column_stats.append(
-                calculate_stats_for_string_col(df_dict[colname], index, colname)
-            )
+            stats_data = calculate_stats_for_string_col(df_dict[colname])
+
+        column_info = {
+            **stats_data,
+            "key": str(index),
+            "label": colname,
+            "type": coltype,
+        }
+        column_stats.append(column_info)
     return column_stats
 
 
-def calculate_stats_for_numeric_col(items: list, index: int, colname: str):
+def calculate_stats_for_numeric_col(items: list) -> ColumnStats:
     # TODO: optimize the list(use np/pd). But this should happen from the extraction phase itself
     return {
         "min": float(np.min(items)),
@@ -169,12 +166,10 @@ def calculate_stats_for_numeric_col(items: list, index: int, colname: str):
         "std_deviation": float(np.std(items)),
         "total_count": len(items),
         "na_count": len([x for x in items if x is None]),
-        "key": str(index),
-        "label": colname,
     }
 
 
-def calculate_stats_for_string_col(items: list, index: int, colname: str):
+def calculate_stats_for_string_col(items: list) -> ColumnStats:
     max_len = 0
     min_len = INFINITY
     for x in items:
@@ -193,6 +188,4 @@ def calculate_stats_for_string_col(items: list, index: int, colname: str):
         "unique_count": len(set(items)),
         "max_length": max_len,
         "min_length": min_len,
-        "key": str(index),
-        "label": colname,
     }
