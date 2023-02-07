@@ -148,8 +148,5 @@ class CastColumn(BaseAction):
     def apply_row(self, row: dict):
         if not self.is_valid:
             raise Exception("Calling apply_row() when is_valid is False")
-        (
-            col_id,
-            target_type,
-        ) = self.params  # parameters validation already happens in base class
+        col_id, target_type = self.params  # parameters validation already happens in base class
         return {**row, col_id: parse(row[col_id], target_type)}

@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, List, Dict, Any, Tuple
+from typing import TypedDict, Optional, List, Dict, Any, Tuple, Union
 
 from utils.common import ColumnTypes
 
@@ -25,3 +25,24 @@ class ExtractedData(TypedDict):
     columns: List[Column]
     extra_headers: List[List[str]]
     column_stats: Any  # TODO
+
+
+class NumericColumnStats(TypedDict):
+    min: float
+    max: float
+    mean: float
+    median: float
+    std_deviation: float
+    total_count: int
+    na_count: int
+
+
+class StringColumnStats(TypedDict):
+    total_count: int
+    na_count: int
+    unique_count: int
+    max_length: int
+    min_length: int
+
+
+ColumnStats = Union[NumericColumnStats, StringColumnStats]
