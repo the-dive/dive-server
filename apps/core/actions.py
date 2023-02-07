@@ -3,6 +3,7 @@ from typing import Optional, Type, Dict
 from apps.core.models import Table, Snapshot
 from apps.core.types import Validation
 
+from utils.extraction import calculate_single_column_stats
 from utils.parsing import parse
 from utils.common import ColumnTypes
 
@@ -110,7 +111,7 @@ def parse_raw_action(raw_action: list, table: Table) -> Optional[BaseAction]:
 
 
 @register_action
-class CastColumn(BaseAction):
+class CastColumnAction(BaseAction):
     NAME = "cast_column"
     PARAM_TYPES = [str, str]  # [col_id, type]
 
@@ -134,15 +135,29 @@ class CastColumn(BaseAction):
             return
         new_rows = [self.apply_row(x) for x in snapshot.data_rows or []]
 
-        col_id, target_type = self.params
-        # Update column type: update type if col["key"] equals col_id
+        col_key, target_type = self.params
+        # Update column type: update type if col["key"] equals col_key
         new_columns = [
-            col if col["key"] != col_id else {**col, "type": target_type}
+            col if col["key"] != col_key else {**col, "type": target_type}
             for col in snapshot.data_columns
         ]
 
+        # Create new snapshot
+        snapshot.id = None
+        snapshot.version = snapshot.version + 1
         snapshot.data_rows = new_rows
         snapshot.data_columns = new_columns
+        snapshot.column_stats = [
+            col_stats
+            if col_stats["key"] != col_key
+            else {
+                "type": target_type,
+                "key": col_key,
+                "label": col_stats["label"],
+                **calculate_single_column_stats([x[col_key] for x in new_rows], target_type)
+            }
+            for col_stats in snapshot.column_stats
+        ]
         snapshot.save()
 
     def apply_row(self, row: dict):

@@ -139,21 +139,24 @@ def calculate_column_stats(df_dict: dict, coltypes: Dict[int, ColumnTypes]):
     """
     column_stats = []
     for index, (colname, coltype) in enumerate(zip(df_dict.keys(), coltypes.values())):
-        if coltype == ColumnTypes.INTEGER:
-            stats_data = calculate_stats_for_numeric_col(df_dict[colname])
-        elif coltype == ColumnTypes.FLOATING:
-            stats_data = calculate_stats_for_numeric_col(df_dict[colname])
-        else:
-            stats_data = calculate_stats_for_string_col(df_dict[colname])
-
+        single_column_stats = calculate_single_column_stats(df_dict[colname], coltype)
         column_info = {
-            **stats_data,
+            **single_column_stats,
             "key": str(index),
             "label": colname,
             "type": coltype,
         }
         column_stats.append(column_info)
     return column_stats
+
+
+def calculate_single_column_stats(items: list, coltype: ColumnTypes) -> ColumnStats:
+    if coltype == ColumnTypes.INTEGER:
+        return calculate_stats_for_numeric_col(items)
+    elif coltype == ColumnTypes.FLOATING:
+        return calculate_stats_for_numeric_col(items)
+    else:
+        return calculate_stats_for_string_col(items)
 
 
 def calculate_stats_for_numeric_col(items: list) -> ColumnStats:
