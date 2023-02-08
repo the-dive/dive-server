@@ -1,10 +1,10 @@
-from typing import Optional, Type, Dict
+from typing import Optional, Type, Dict, List, Tuple
 
 from apps.core.models import Table, Snapshot
 from apps.core.types import Validation
 
 from utils.extraction import calculate_single_column_stats
-from utils.parsing import parse
+from utils.parsing import parse, parse_type
 from utils.common import ColumnTypes
 
 
@@ -26,6 +26,10 @@ def register_action(cls):
         raise Exception(f"Action {name} is already registered.")
     __ACTIONS[name] = cls
     return cls
+
+
+def get_all_action_names() -> List[str]:
+    return list(__ACTIONS.keys())
 
 
 class MethodNotImplemented(Exception):
@@ -52,12 +56,12 @@ class BaseAction:
         self.params = params
         self.table = table
 
-    def base_validate(self, params: list, _: Table) -> Validation:
+    def base_validate(self, params: List[str], _: Table) -> Validation:
         if len(params) != len(self.PARAM_TYPES):
             return False, "Invalid number of parameters."
 
         for i, (param, typ) in enumerate(zip(params, self.PARAM_TYPES)):
-            if not isinstance(param, typ):
+            if parse_type(typ, param) is None:
                 return (
                     False,
                     f"Invalid type {type(param)} for parameter {i}. Expected {typ}.",
@@ -90,11 +94,57 @@ class BaseAction:
         return self.validate_column(params, table)
 
     def apply_table(self, table: Table):
-        """Apply the action to whole table. Results in new set of table rows/columns."""
-        raise MethodNotImplemented
+        snapshot, new_rows, new_columns, column_stats = self.run_action(table)
+        # Create new snapshot
+        snapshot.id = None
+        snapshot.version = snapshot.version + 1
+        snapshot.data_rows = new_rows
+        snapshot.data_columns = new_columns
+        snapshot.column_stats = column_stats
+        snapshot.save()
+
+    def run_action(self, table: Table) -> Tuple[Snapshot, List[dict], List[dict], List[dict]]:
+        """
+        Returns a tuple containing:
+        (
+            snapshot on which the action ran,
+            new_rows,
+            new_columns,
+            column_stats
+        )
+        """
+        if not self.is_valid:
+            raise Exception("Calling run_action() when is_valid is False")
+        snapshot: Optional[Snapshot] = table.last_snapshot
+        if snapshot is None:
+            raise Exception("Calling run_action() when table has no snapshot")
+
+        new_rows = [self.apply_row(x) for x in snapshot.data_rows or []]
+
+        col_key, target_type = self.params
+
+        new_columns, affected_column_ids = self.apply_columns(snapshot.data_columns)
+
+        # Only calculate stats for the affected columns
+        column_stats = [
+            next(col_stat for col_stat in snapshot.column_stats if col_stat["key"] == col["key"])
+            if col["key"] not in affected_column_ids
+            else {
+                "type": col["type"],
+                "key": col_key,
+                "label": col["label"],
+                **calculate_single_column_stats([x[col_key] for x in new_rows], target_type)
+            }
+            for col in new_columns
+        ]
+        return snapshot, new_rows, new_columns, column_stats
 
     def apply_row(self, row: dict):
         """Apply the action to single table row. Results in new set of table row."""
+        raise MethodNotImplemented
+
+    def apply_columns(self, cols: List[dict]) -> Tuple[List[dict], List[str]]:
+        """Get new columns and affected column keys as tuples: (new_cols, affected_col_ids)"""
         raise MethodNotImplemented
 
 
@@ -102,10 +152,7 @@ def get_action_class(name: str) -> Optional[Type]:
     return __ACTIONS.get(name)
 
 
-def parse_raw_action(raw_action: list, table: Table) -> Optional[BaseAction]:
-    if not raw_action:
-        return None
-    action_name, *params = raw_action
+def parse_raw_action(action_name: str, params: List[str], table: Table) -> Optional[BaseAction]:
     Action = get_action_class(action_name)
     return Action and Action(params, table)
 
@@ -127,38 +174,15 @@ class CastColumnAction(BaseAction):
             return False, f"Invalid target type '{target_type}'"
         return True, None
 
-    def apply_table(self, table: Table):
-        if not self.is_valid:
-            raise Exception("Calling apply_table() when is_valid is False")
-        snapshot: Optional[Snapshot] = table.last_snapshot
-        if snapshot is None:
-            return
-        new_rows = [self.apply_row(x) for x in snapshot.data_rows or []]
-
+    def apply_columns(self, columns: List[dict]) -> Tuple[List[dict], List[str]]:
         col_key, target_type = self.params
+        affected_col_keys = [col_key]
         # Update column type: update type if col["key"] equals col_key
-        new_columns = [
+        new_cols = [
             col if col["key"] != col_key else {**col, "type": target_type}
-            for col in snapshot.data_columns
+            for col in columns
         ]
-
-        # Create new snapshot
-        snapshot.id = None
-        snapshot.version = snapshot.version + 1
-        snapshot.data_rows = new_rows
-        snapshot.data_columns = new_columns
-        snapshot.column_stats = [
-            col_stats
-            if col_stats["key"] != col_key
-            else {
-                "type": target_type,
-                "key": col_key,
-                "label": col_stats["label"],
-                **calculate_single_column_stats([x[col_key] for x in new_rows], target_type)
-            }
-            for col_stats in snapshot.column_stats
-        ]
-        snapshot.save()
+        return new_cols, affected_col_keys
 
     def apply_row(self, row: dict):
         if not self.is_valid:
