@@ -39,31 +39,28 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
 
     def test_parse_action_with_inexistent_column(self):
         inexistent_column = "random_col"
-        raw_action = ["cast_column", inexistent_column, "string"]
-        action = parse_raw_action(raw_action, self.table)
+        params = [inexistent_column, "string"]
+        action = parse_raw_action(self.action_name, params, self.table)
         assert action is not None
         assert action.is_valid is False
         assert action.error, "Error should be present"
 
     def test_parse_action(self):
         # Sample row: {"0": 1, "1": "Sam", "2": 2000, "key": "0"}
-        raw_action = ["cast_column", "0", "string"]
-        action = parse_raw_action(raw_action, self.table)
+        params = ["0", "string"]
+        action = parse_raw_action(self.action_name, params, self.table)
         assert action is not None
         assert action.is_valid is True
         assert not action.error, "Error should not be present"
 
     def test_apply_action_to_row(self):
-        raw_action = ["cast_column", "0", "string"]
-        action = cast(CastColumnAction, parse_raw_action(raw_action, self.table))
+        params = ["0", "string"]
+        action = cast(CastColumnAction, parse_raw_action(self.action_name, params, self.table))
         assert action is not None
         assert action.is_valid is True
 
         # Set up actions
         col_key = "0"
-        target_type = "string"
-        raw_action = ["cast_column", col_key, target_type]
-
         # row 0 of the table
         row = self.table.last_snapshot.data_rows[0]
         assert isinstance(row[col_key], int)
@@ -71,15 +68,13 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
         assert isinstance(new_row[col_key], str)
 
     def test_apply_action_to_table(self):
-        raw_action = ["cast_column", "0", "string"]
-        action = cast(CastColumnAction, parse_raw_action(raw_action, self.table))
+        params = ["0", "string"]
+        action = cast(CastColumnAction, parse_raw_action(self.action_name, params, self.table))
         assert action is not None
         assert action.is_valid is True
 
         # Set up actions
         col_key = "0"
-        target_type = "string"
-        raw_action = ["cast_column", col_key, target_type]
 
         # Test original column data, row data and stats
         snapshot = self.table.last_snapshot
