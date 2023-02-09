@@ -9,7 +9,12 @@ from graphene_file_upload.django.testing import GraphQLFileUploadTestCase
 
 from utils.graphene.tests import GraphQLTestCase
 from dive.factories import UserFactory
-from dive.base_test import assert_object_created, TEST_MEDIA_DIR, TEST_FILE_PATH
+from dive.base_test import (
+    assert_object_created,
+    TEST_MEDIA_DIR,
+    TEST_FILE_PATH,
+    BaseTestWithDataFrameAndExcel,
+)
 from apps.core.models import Dataset, Table
 from apps.core.factories import DatasetFactory, TableFactory
 
@@ -231,7 +236,7 @@ class TestTableMutation(GraphQLTestCase):
     def test_rename_table(self):
         dataset = DatasetFactory.create(name="mydataset")
         table = TableFactory.create(
-            dataset=dataset, is_added_to_workspace=False, name="Test Table"
+            dataset=dataset, is_added_to_workspace=False, name="Test Table",
         )
         mutate_query = """
             mutation Mutation($tableId: ID! $name: String!) {
@@ -253,3 +258,36 @@ class TestTableMutation(GraphQLTestCase):
         content = resp_data["data"]["renameTable"]
         assert content["ok"] is True
         self.assertEqual(content["result"]["name"], variables["name"])
+
+
+@override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
+class TestTableActions(GraphQLTestCase, BaseTestWithDataFrameAndExcel):
+    def setUp(self):
+        self.action_mutation = """
+            mutation Mutation($tableId: ID! $actionName: String! $params: String[]!) {
+                renameTable(id: $tableId actionName: $actionName params: $params) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                    }
+                }
+            }
+        """
+        table = self.dataset.table_set.first()
+        col_key = "0"
+        self.variables = {
+            "tableId": table.id,
+            "action_name": "cast_column",
+            "params": [col_key, "string"],
+        }
+
+    def test_table_action_mutation(self):
+        resp_data = self.query_check(
+            self.action_mutation,
+            variables=self.variables,
+        )
+        content = resp_data["data"]["renameTable"]
+        assert content["ok"] is True
+        self.assertEqual(content["result"]["name"], self.variables["name"])

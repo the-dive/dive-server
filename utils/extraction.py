@@ -71,7 +71,9 @@ def extract_data_from_excel(
     df.replace(na_replacement, inplace=True)
 
     # Store map of column index and type information
-    coltypes: Dict[int, ColumnTypes] = {i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)}
+    coltypes: Dict[int, ColumnTypes] = {
+        i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)
+    }
 
     df_dict: Dict[str, list] = df.to_dict("list")
 

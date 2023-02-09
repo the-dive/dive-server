@@ -14,7 +14,8 @@ from utils.graphene.mutation import (
 )
 
 from apps.core.schema import DatasetType, TableType
-from apps.core.actions import get_all_action_names, parse_raw_action
+from apps.core.actions.base import get_all_action_names
+from apps.core.actions.utils import parse_raw_action
 from apps.file.serializers import FileSerializer, File
 from apps.core.utils import create_dataset_and_tables
 
@@ -147,7 +148,7 @@ class RenameTable(graphene.Mutation):
         return DeleteTableFromWorkspace(result=instance, errors=None, ok=True)
 
 
-ActionEnum = graphene.Enum('ActionEnum', [(ac, ac) for ac in get_all_action_names()])
+ActionEnum = graphene.Enum("ActionEnum", [(ac, ac) for ac in get_all_action_names()])
 
 
 class ActionInputType(graphene.InputObjectType):
@@ -178,12 +179,12 @@ class PerformTableAction(graphene.Mutation):
             errors = [action.error]
             return PerformTableAction(errors=errors, ok=False)
         # Create action
-        last_action = Action.objects.filter(table=table).order_by('-order').first()
+        last_action = Action.objects.filter(table=table).order_by("-order").first()
         action_obj = Action.objects.create(
             table=table,
             action_name=action_name,
             parameters=params,
-            order=last_action.order + 1 if last_action is not None else 1
+            order=last_action.order + 1 if last_action is not None else 1,
         )
         # Call background task to calculate the stats.
         transaction.on_commit(
