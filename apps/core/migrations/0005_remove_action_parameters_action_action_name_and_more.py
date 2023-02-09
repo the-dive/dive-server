@@ -4,30 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0004_alter_action_unique_together_action_snapshot_and_more'),
+        ("core", "0004_alter_action_unique_together_action_snapshot_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='action',
-            name='parameters',
+            model_name="action",
+            name="parameters",
         ),
         migrations.AddField(
-            model_name='action',
-            name='action_name',
-            field=models.CharField(default='', max_length=100),
+            model_name="action",
+            name="action_name",
+            field=models.CharField(default="", max_length=100),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='action',
-            name='table_column_stats',
+            model_name="action",
+            name="table_column_stats",
             field=models.JSONField(default=list),
         ),
         migrations.AlterField(
-            model_name='snapshot',
-            name='column_stats',
+            model_name="snapshot",
+            name="column_stats",
             field=models.JSONField(default=list),
         ),
     ]

@@ -2,12 +2,20 @@ import pytest
 from typing import cast
 
 from dive.base_test import BaseTestWithDataFrameAndExcel
-from apps.core.actions import CastColumnAction, get_action_class, parse_raw_action
+from apps.core.actions.base import get_action_class
+from apps.core.actions.utils import parse_raw_action
+from apps.core.actions.cast_column import CastColumnAction
 from apps.core.tasks import extract_table_data
 from apps.core.models import Snapshot
 from utils.common import ColumnTypes
 
-STRING_STAT_KEYS = ["total_count", "na_count", "unique_count", "max_length", "min_length"]
+STRING_STAT_KEYS = [
+    "total_count",
+    "na_count",
+    "unique_count",
+    "max_length",
+    "min_length",
+]
 NUMERIC_STAT_KEYS = ["min", "max", "median", "std_deviation", "total_count", "na_count"]
 
 
@@ -55,7 +63,9 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
 
     def test_apply_action_to_row(self):
         params = ["0", "string"]
-        action = cast(CastColumnAction, parse_raw_action(self.action_name, params, self.table))
+        action = cast(
+            CastColumnAction, parse_raw_action(self.action_name, params, self.table)
+        )
         assert action is not None
         assert action.is_valid is True
 
@@ -69,7 +79,9 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
 
     def test_apply_action_to_table(self):
         params = ["0", "string"]
-        action = cast(CastColumnAction, parse_raw_action(self.action_name, params, self.table))
+        action = cast(
+            CastColumnAction, parse_raw_action(self.action_name, params, self.table)
+        )
         assert action is not None
         assert action.is_valid is True
 
@@ -84,7 +96,9 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
         original_stats = snapshot.column_stats
         col_stats = next(x for x in original_stats if x["key"] == col_key)
         for stat_key in NUMERIC_STAT_KEYS:
-            assert stat_key in col_stats, f"Integer column should have {stat_key} in stats"
+            assert (
+                stat_key in col_stats
+            ), f"Integer column should have {stat_key} in stats"
 
         # First assert column type has integer
         for col in original_columns:
@@ -98,13 +112,16 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
         # Apply action to table
         action.apply_table()
 
-        assert Snapshot.objects.filter(table=self.table, version=2).exists(),\
-            "A snapshot with version 2 should have been created"
+        assert Snapshot.objects.filter(
+            table=self.table, version=2
+        ).exists(), "A snapshot with version 2 should have been created"
 
         new_stats = self.table.last_snapshot.column_stats
         col_stats_new = next(x for x in new_stats if x["key"] == col_key)
         for stat_key in STRING_STAT_KEYS:
-            assert stat_key in col_stats_new, f"String column should have {stat_key} in stats"
+            assert (
+                stat_key in col_stats_new
+            ), f"String column should have {stat_key} in stats"
 
         # After application, assert all row have str for col_key
         for row in self.table.last_snapshot.data_rows:

@@ -4,11 +4,14 @@ from apps.core.models import Table, Snapshot
 from apps.core.types import Validation
 
 from utils.extraction import calculate_single_column_stats
-from utils.parsing import parse, parse_type
-from utils.common import ColumnTypes
+from utils.parsing import parse_type
 
 
 __ACTIONS: Dict[str, Type] = {}
+
+
+def get_action_class(name: str) -> Optional[Type]:
+    return __ACTIONS.get(name)
 
 
 def register_action(cls):
@@ -57,7 +60,7 @@ class BaseAction:
         self.table = table
 
     @classmethod
-    def compose(cls, actions: List['BaseAction']) -> Type['BaseAction']:
+    def compose(cls, actions: List["BaseAction"]) -> Type["BaseAction"]:
         class ComposedAction(BaseAction):
             def validate(self, params, table):
                 for act in actions:
@@ -153,13 +156,19 @@ class BaseAction:
 
         # Only calculate stats for the affected columns
         column_stats = [
-            next(col_stat for col_stat in snapshot.column_stats if col_stat["key"] == col["key"])
+            next(
+                col_stat
+                for col_stat in snapshot.column_stats
+                if col_stat["key"] == col["key"]
+            )
             if col["key"] not in affected_column_ids
             else {
                 "type": col["type"],
                 "key": col_key,
                 "label": col["label"],
-                **calculate_single_column_stats([x[col_key] for x in new_rows], target_type)
+                **calculate_single_column_stats(
+                    [x[col_key] for x in new_rows], target_type
+                ),
             }
             for col in new_columns
         ]
@@ -172,46 +181,3 @@ class BaseAction:
     def apply_columns(self, cols: List[dict]) -> Tuple[List[dict], List[str]]:
         """Get new columns and affected column keys as tuples: (new_cols, affected_col_ids)"""
         raise MethodNotImplemented
-
-
-def get_action_class(name: str) -> Optional[Type]:
-    return __ACTIONS.get(name)
-
-
-def parse_raw_action(action_name: str, params: List[str], table: Table) -> Optional[BaseAction]:
-    Action = get_action_class(action_name)
-    return Action and Action(params, table)
-
-
-@register_action
-class CastColumnAction(BaseAction):
-    NAME = "cast_column"
-    PARAM_TYPES = [str, str]  # [col_id, type]
-
-    def validate(self, params: list, table: Table) -> Validation:
-        is_valid, err = super().validate(params, table)
-        if not is_valid:
-            return is_valid, err
-        _, target_type = params
-        if target_type not in [
-            ColumnTypes.INTEGER,
-            ColumnTypes.STRING,
-        ]:  # TODO: add other types
-            return False, f"Invalid target type '{target_type}'"
-        return True, None
-
-    def apply_columns(self, columns: List[dict]) -> Tuple[List[dict], List[str]]:
-        col_key, target_type = self.params
-        affected_col_keys = [col_key]
-        # Update column type: update type if col["key"] equals col_key
-        new_cols = [
-            col if col["key"] != col_key else {**col, "type": target_type}
-            for col in columns
-        ]
-        return new_cols, affected_col_keys
-
-    def apply_row(self, row: dict):
-        if not self.is_valid:
-            raise Exception("Calling apply_row() when is_valid is False")
-        col_id, target_type = self.params  # parameters validation already happens in base class
-        return {**row, col_id: parse(row[col_id], target_type)}
