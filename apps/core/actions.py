@@ -56,6 +56,32 @@ class BaseAction:
         self.params = params
         self.table = table
 
+    @classmethod
+    def compose(cls, actions: List['BaseAction']) -> Type['BaseAction']:
+        class ComposedAction(BaseAction):
+            def validate(self, params, table):
+                for act in actions:
+                    if not act.is_valid:
+                        return False, act.error
+                return True, None
+
+            def apply_row(self, row: dict):
+                new_row = row
+                # TODO: perhaps use reduce
+                for act in actions:
+                    new_row = act.apply_row(new_row)
+                return new_row
+
+            def apply_columns(self, columns):
+                new_cols, affected_cols = columns, []
+                # TODO: perhaps use reduce
+                for act in actions:
+                    new_cols, affected_cols_ = act.apply_columns(new_cols)
+                    affected_cols = list(set([*affected_cols, *affected_cols_]))
+                return new_cols, affected_cols
+
+        return ComposedAction
+
     def base_validate(self, params: List[str], _: Table) -> Validation:
         if len(params) != len(self.PARAM_TYPES):
             return False, "Invalid number of parameters."
@@ -93,8 +119,8 @@ class BaseAction:
 
         return self.validate_column(params, table)
 
-    def apply_table(self, table: Table):
-        snapshot, new_rows, new_columns, column_stats = self.run_action(table)
+    def apply_table(self):
+        snapshot, new_rows, new_columns, column_stats = self.run_action()
         # Create new snapshot
         snapshot.id = None
         snapshot.version = snapshot.version + 1
@@ -103,7 +129,7 @@ class BaseAction:
         snapshot.column_stats = column_stats
         snapshot.save()
 
-    def run_action(self, table: Table) -> Tuple[Snapshot, List[dict], List[dict], List[dict]]:
+    def run_action(self) -> Tuple[Snapshot, List[dict], List[dict], List[dict]]:
         """
         Returns a tuple containing:
         (
@@ -115,7 +141,7 @@ class BaseAction:
         """
         if not self.is_valid:
             raise Exception("Calling run_action() when is_valid is False")
-        snapshot: Optional[Snapshot] = table.last_snapshot
+        snapshot: Optional[Snapshot] = self.table.last_snapshot
         if snapshot is None:
             raise Exception("Calling run_action() when table has no snapshot")
 

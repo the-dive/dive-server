@@ -96,7 +96,7 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
             assert isinstance(row[col_key], int)
 
         # Apply action to table
-        action.apply_table(self.table)
+        action.apply_table()
 
         assert Snapshot.objects.filter(table=self.table, version=2).exists(),\
             "A snapshot with version 2 should have been created"
