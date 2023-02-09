@@ -1,3 +1,6 @@
+from typing import List
+
+from django.db import transaction
 import graphene
 from graphene_file_upload.scalars import Upload
 
@@ -11,14 +14,15 @@ from utils.graphene.mutation import (
 )
 
 from apps.core.schema import DatasetType, TableType
+from apps.core.actions import get_all_action_names, parse_raw_action
 from apps.file.serializers import FileSerializer, File
 from apps.core.utils import create_dataset_and_tables
 
 from utils.decorators import lift_mutate_with_instance
 from .serializers import TablePropertiesSerializer
-from .models import Table
+from .models import Table, Action
 from .utils import apply_table_properties_and_extract_preview
-from .tasks import extract_table_data
+from .tasks import extract_table_data, calculate_column_stats_for_action
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
@@ -143,6 +147,51 @@ class RenameTable(graphene.Mutation):
         return DeleteTableFromWorkspace(result=instance, errors=None, ok=True)
 
 
+ActionEnum = graphene.Enum('ActionEnum', [(ac, ac) for ac in get_all_action_names()])
+
+
+class ActionInputType(graphene.InputObjectType):
+    action_name = graphene.Field(ActionEnum)
+    params = graphene.List(graphene.String)
+
+
+class PerformTableAction(graphene.Mutation):
+    class Arguments:
+        action = ActionInputType(required=True)
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Int()
+
+    @staticmethod
+    @lift_mutate_with_instance(Table)
+    def mutate(table, root, info, id, action_name: str, params: List[str]):
+        """
+        Validate action and parameters and create an Action object if all valid
+        """
+        action = parse_raw_action(action_name, params, table)
+        if action is None:
+            errors = ["invalid action name"]
+            return PerformTableAction(errors=errors, ok=False)
+        elif action.is_valid is False:
+            errors = [action.error]
+            return PerformTableAction(errors=errors, ok=False)
+        # Create action
+        last_action = Action.objects.filter(table=table).order_by('-order').first()
+        action_obj = Action.objects.create(
+            table=table,
+            action_name=action_name,
+            parameters=params,
+            order=last_action.order + 1 if last_action is not None else 1
+        )
+        # Call background task to calculate the stats.
+        transaction.on_commit(
+            lambda: calculate_column_stats_for_action.delay(action_obj.id)
+        )
+        return PerformTableAction(result=action_obj.id, errors=None, ok=True)
+
+
 class Mutation:
     create_dataset = CreateDataset.Field()
     add_table_to_workspace = AddTableToWorkSpace.Field()
@@ -150,3 +199,4 @@ class Mutation:
     clone_table = CloneTable.Field()
     update_table_properties = UpdateTableProperties.Field()
     rename_table = RenameTable.Field()
+    table_action = PerformTableAction.Field()

@@ -2,6 +2,7 @@ import copy
 from typing import Optional
 
 from django.db import models
+from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from django.utils.functional import cached_property
 
@@ -42,7 +43,8 @@ class Table(BaseModel, NamedModelMixin):
         default=TableStatus.PENDING,
     )
     properties = models.JSONField(
-        default=get_default_table_properties, validators=[validate_table_properties]
+        default=get_default_table_properties,
+        validators=[validate_table_properties],
     )
     preview_data = models.JSONField(blank=True, null=True)
     is_added_to_workspace = models.BooleanField(default=False)
@@ -50,7 +52,10 @@ class Table(BaseModel, NamedModelMixin):
     has_errored = models.BooleanField(default=False)
     error = models.TextField(null=True, blank=True)
     cloned_from = models.ForeignKey(
-        "Table", on_delete=models.SET_NULL, null=True, blank=True
+        "Table",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
 
     def clone(self):
@@ -94,7 +99,7 @@ class Snapshot(BaseModel):
     # TODO: validation and types for json fields
     data_rows = models.JSONField()
     data_columns = models.JSONField()
-    column_stats = models.JSONField()
+    column_stats = models.JSONField(default=list)
 
     def __str__(self):
         return f"{self.table.original_name} - {self.version}"
@@ -109,10 +114,47 @@ class Action(BaseModel, NamedModelMixin):
     """
 
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
+    """
+    IMPORTANT!!
+    A snapshot in an action means that the action has been applied to some
+    previous snapshot(table.last_snapshot) and a new snapshot has been created.
+    The snapshot field defined below is that new snapshot.
+
+    So, when there are unapplied actions(actions that are not associated with any
+    snapshot, we aggregate them, compose them and apply to the last_snapshot of the
+    table and create a new one.
+    """
     snapshot = models.ForeignKey(Snapshot, null=True, on_delete=models.SET_NULL)
     order = models.PositiveIntegerField()
-    # TODO: JSON validations for parameters
-    parameters = models.JSONField(default=list)
+    action_name = models.CharField(max_length=100)
+    parameters = ArrayField(models.CharField(max_length=200))
+    """
+    IMPORTANT!!
+    Our idea is to not create a new snapshot for every action, that would take
+    up much space. We can serve the rows applied with actions on the fly when
+    API requests. However, stats change after each action and calculating stats
+    on the fly for each request is not feasible(because stats operate on whole
+    transformed data while actions can be applied to only the paginated rows on
+    the fly). Thus, we need to associate each action with the table stats.
+
+    However, there's a catch with this approach althouth this works fine for
+    single action on a snapshot. For multiple actions, how do we calculate the
+    stats for the last action? Because, for the first action, we have a
+    snapshot on which we apply the action and calculate stats. But for
+    subsequent actions, we won't have snapshots due to which we won't have data
+    to apply that action on and calculate stats. To mitigate this, we are going
+    to chain all the actions from an snapshot to the latest action and apply
+    the chain of actions to the snapshot data and then calculate stats. This
+    process repeats after we create new snapshot.
+
+    A natural question to ask here is that why not we calculate snapshot for
+    each action which will prevent running actions repeatedly every time new
+    action is added. Well I(@bewakes) think, we are more concerned about the
+    space/storage requirements than by ocassional calculations. Of course, this
+    is an open question and the answer might change based on the usage in
+    future. But for now I think this should be good enough.
+    """
+    table_column_stats = models.JSONField(default=list)
 
     class Meta:
         unique_together = ("table", "order")
