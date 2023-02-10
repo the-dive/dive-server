@@ -5,7 +5,6 @@ from celery import shared_task
 
 from apps.file.models import File
 from apps.core.models import Table, Snapshot, Action
-from apps.core.types import ExtractedData
 from apps.core.actions.utils import get_composed_action_for_action_object
 from utils.extraction import extract_data_from_excel
 
@@ -20,19 +19,20 @@ def extract_table_data(table_id: int):
         return
 
     if table.source_type == File.Type.EXCEL:
-        pd_excel = pd.ExcelFile(table.dataset.file.file.path)
-        extracted_data, err = extract_data_from_excel(
-            pd_excel, table.original_name, table.properties, calculate_stats=True
-        )
-        if extracted_data is None:
-            logger.warning(f"Error extracting data: {err}")
-            return
-        create_snapshot_from_extracted_data(table, extracted_data)
+        create_snapshot_for_table(table)
     else:
         raise Exception(f"Extraction for {table.source_type} not implemented")
 
 
-def create_snapshot_from_extracted_data(table: Table, extracted_data: ExtractedData):
+def create_snapshot_for_table(table: Table) -> Optional[Snapshot]:
+    pd_excel = pd.ExcelFile(table.dataset.file.file.path)
+    extracted_data, err = extract_data_from_excel(
+        pd_excel, table.original_name, table.properties, calculate_stats=True
+    )
+    if extracted_data is None:
+        logger.warning(f"Error extracting data: {err}")
+        return None
+
     return Snapshot.objects.create(
         table=table,
         version=1,

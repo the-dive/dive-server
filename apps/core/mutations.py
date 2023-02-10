@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any
 
 from django.db import transaction
 import graphene
@@ -167,10 +167,12 @@ class PerformTableAction(graphene.Mutation):
 
     @staticmethod
     @lift_mutate_with_instance(Table)
-    def mutate(table, root, info, id, action_name: str, params: List[str]):
+    def mutate(table, root, info, id, action: Any):
         """
         Validate action and parameters and create an Action object if all valid
         """
+        action_name = action["action_name"]
+        params = action["params"]
         action = parse_raw_action(action_name, params, table)
         if action is None:
             errors = ["invalid action name"]
@@ -178,6 +180,7 @@ class PerformTableAction(graphene.Mutation):
         elif action.is_valid is False:
             errors = [action.error]
             return PerformTableAction(errors=errors, ok=False)
+
         # Create action
         last_action = Action.objects.filter(table=table).order_by("-order").first()
         action_obj = Action.objects.create(
