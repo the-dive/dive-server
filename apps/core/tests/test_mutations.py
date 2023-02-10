@@ -3,7 +3,7 @@ import shutil
 import pandas as pd
 
 from unittest import mock
-from django.test import override_settings
+from django.test import override_settings, TestCase
 
 from graphene_file_upload.django.testing import GraphQLFileUploadTestCase
 
@@ -15,7 +15,8 @@ from dive.base_test import (
     TEST_FILE_PATH,
     BaseTestWithDataFrameAndExcel,
 )
-from apps.core.models import Dataset, Table
+from apps.core.models import Dataset, Table, Action
+from apps.core.tasks import create_snapshot_for_table
 from apps.core.factories import DatasetFactory, TableFactory
 
 from dive.base_test import create_test_file
@@ -236,7 +237,9 @@ class TestTableMutation(GraphQLTestCase):
     def test_rename_table(self):
         dataset = DatasetFactory.create(name="mydataset")
         table = TableFactory.create(
-            dataset=dataset, is_added_to_workspace=False, name="Test Table",
+            dataset=dataset,
+            is_added_to_workspace=False,
+            name="Test Table",
         )
         mutate_query = """
             mutation Mutation($tableId: ID! $name: String!) {
@@ -261,33 +264,39 @@ class TestTableMutation(GraphQLTestCase):
 
 
 @override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
-class TestTableActions(GraphQLTestCase, BaseTestWithDataFrameAndExcel):
+class TestTableActions(GraphQLTestCase, BaseTestWithDataFrameAndExcel, TestCase):
     def setUp(self):
+        super().setUp()
         self.action_mutation = """
-            mutation Mutation($tableId: ID! $actionName: String! $params: String[]!) {
-                renameTable(id: $tableId actionName: $actionName params: $params) {
+            mutation Mutation($tableId: ID! $action: ActionInputType!) {
+                tableAction(id: $tableId action: $action) {
                     ok
                     errors
-                    result {
-                        id
-                        name
-                    }
                 }
             }
         """
-        table = self.dataset.table_set.first()
+        self.table = self.dataset.table_set.first()
         col_key = "0"
         self.variables = {
-            "tableId": table.id,
-            "action_name": "cast_column",
-            "params": [col_key, "string"],
+            "tableId": self.table.id,
+            "action": {
+                "actionName": "cast_column",
+                "params": [col_key, "string"],
+            },
         }
 
-    def test_table_action_mutation(self):
-        resp_data = self.query_check(
-            self.action_mutation,
-            variables=self.variables,
-        )
-        content = resp_data["data"]["renameTable"]
+    @mock.patch("apps.core.mutations.calculate_column_stats_for_action.delay")
+    def test_table_action_mutation(self, col_stats_delay_func):
+        # First create snapshot for table
+        create_snapshot_for_table(self.table)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            resp_data = self.query_check(
+                self.action_mutation,
+                variables=self.variables,
+            )
+        content = resp_data["data"]["tableAction"]
         assert content["ok"] is True
-        self.assertEqual(content["result"]["name"], self.variables["name"])
+        new_action = Action.objects.filter(order=1, table=self.table).last()
+        assert new_action is not None
+        col_stats_delay_func.assert_called_with(new_action.pk)

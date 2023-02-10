@@ -113,6 +113,16 @@ class Action(BaseModel, NamedModelMixin):
     2. Deleting a Column: delete(column)
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The following fields cannot be updated after created. So,
+        # they are tracked in private attributes. See save() method
+        # for their usage.
+        self.__action_name = self.action_name
+        self.__order = self.order
+        self.__parameters = self.parameters
+        self.__table = self.table
+
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
     """
     IMPORTANT!!
@@ -160,6 +170,13 @@ class Action(BaseModel, NamedModelMixin):
         unique_together = ("table", "order")
 
     def save(self, *args, **kwargs):
-        if self.pk:
-            raise Exception("Cannot update action after creation")
+        if (
+            self.__table != self.table
+            or self.__order != self.order
+            or self.__action_name != self.action_name
+            or self.__parameters != self.parameters
+        ):
+            raise Exception(
+                "Cannot update fields table, order, action_name and parameters after creation"
+            )
         super().save(*args, **kwargs)

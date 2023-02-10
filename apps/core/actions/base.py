@@ -1,4 +1,5 @@
-from typing import Optional, Type, Dict, List, Tuple
+from typing import Optional, Type, Dict, List, Tuple, Any
+from functools import reduce
 
 from apps.core.models import Table, Snapshot
 from apps.core.types import Validation
@@ -63,21 +64,24 @@ class BaseAction:
     def compose(cls, actions: List["BaseAction"]) -> Type["BaseAction"]:
         class ComposedAction(BaseAction):
             def validate(self, params, table):
+                """
+                Iterate over all actions and if any of them is not valid,
+                return invalid. Else return valid
+                """
                 for act in actions:
                     if not act.is_valid:
                         return False, act.error
                 return True, None
 
-            def apply_row(self, row: dict):
-                new_row = row
-                # TODO: perhaps use reduce
-                for act in actions:
-                    new_row = act.apply_row(new_row)
-                return new_row
+            def apply_row(self, row: dict) -> dict[str, Any]:
+                return reduce(
+                    lambda new_row, action: action.apply_row(new_row),
+                    actions,
+                    row,
+                )
 
             def apply_columns(self, columns):
                 new_cols, affected_cols = columns, []
-                # TODO: perhaps use reduce
                 for act in actions:
                     new_cols, affected_cols_ = act.apply_columns(new_cols)
                     affected_cols = list(set([*affected_cols, *affected_cols_]))
@@ -150,8 +154,6 @@ class BaseAction:
 
         new_rows = [self.apply_row(x) for x in snapshot.data_rows or []]
 
-        col_key, target_type = self.params
-
         new_columns, affected_column_ids = self.apply_columns(snapshot.data_columns)
 
         # Only calculate stats for the affected columns
@@ -164,10 +166,10 @@ class BaseAction:
             if col["key"] not in affected_column_ids
             else {
                 "type": col["type"],
-                "key": col_key,
+                "key": col["key"],
                 "label": col["label"],
                 **calculate_single_column_stats(
-                    [x[col_key] for x in new_rows], target_type
+                    [x[col["key"]] for x in new_rows], col["type"]
                 ),
             }
             for col in new_columns

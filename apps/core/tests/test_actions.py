@@ -132,3 +132,7 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
         for col in new_columns:
             if col["key"] == col_key:
                 assert col["type"] == ColumnTypes.STRING
+
+    def test_action_composition(self):
+        # TODO: To be implemented by @bewakes
+        pass
