@@ -5,8 +5,8 @@ from dive.base_test import BaseTestWithDataFrameAndExcel
 from apps.core.actions.base import get_action_class
 from apps.core.actions.utils import parse_raw_action
 from apps.core.actions.cast_column import CastColumnAction
-from apps.core.tasks import extract_table_data
-from apps.core.models import Snapshot
+from apps.core.tasks import extract_table_data, calculate_column_stats_for_action
+from apps.core.models import Snapshot, Action
 from utils.common import ColumnTypes
 
 STRING_STAT_KEYS = [
@@ -134,5 +134,36 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
                 assert col["type"] == ColumnTypes.STRING
 
     def test_action_composition(self):
-        # TODO: To be implemented by @bewakes
+        # TODO: To be implemented by @bewakes, will do after other actions are
+        # added. Currently we only have a single action
         pass
+
+    def test_action_rows_after_an_action(self):
+        """Test if rows are different from the snapshot rows after an action is
+        issued which is not yet applied"""
+        colkey = "0"
+        params = [colkey, "string"]
+        action_name = "cast_column"
+        first_row_before_action = {**self.table.data_rows[0]}
+        action_object = Action.objects.create(
+            table=self.table,
+            action_name=action_name,
+            parameters=params,
+            order=1,
+        )
+        # Test for column stats before and after action
+        assert action_object.table_column_stats == []
+        calculate_column_stats_for_action(action_object.id)
+        action_object = Action.objects.get(pk=action_object.id)
+        assert action_object.table_column_stats != []
+
+        # Test for column actions for table
+        assert self.table.data_column_stats == action_object.table_column_stats
+
+        first_row_after_action = self.table.data_rows[0]
+        assert isinstance(
+            first_row_before_action[colkey], int
+        ), "Before action, col is int"
+        assert isinstance(
+            first_row_after_action[colkey], str
+        ), "After action, col is string"
