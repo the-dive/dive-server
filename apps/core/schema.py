@@ -75,6 +75,16 @@ class TableType(DjangoObjectType):
     properties = graphene.Field(TablePropertiesType)
     data_column_stats = GenericScalar(source="data_column_stats")
     data_rows = GenericScalar(source="data_rows")
+    rows_count = graphene.Int()
+    columns_count = graphene.Int()
+
+    @staticmethod
+    def resolve_rows_count(root, info, **kwargs):
+        return len(root.data_rows)
+
+    @staticmethod
+    def resolve_columns_count(root, info, **kwargs):
+        return len(root.data_columns)
 
 
 class TableListType(CustomDjangoListObjectType):
