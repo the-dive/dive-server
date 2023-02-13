@@ -67,25 +67,66 @@ class Table(BaseModel, NamedModelMixin):
         return cloned_table
 
     @property
+    def last_unapplied_action(self) -> Optional["Action"]:
+        return (
+            self.action_set.filter(snapshot__isnull=True)
+            .order_by("-created_at")
+            .first()
+        )
+
+    @property
     def last_snapshot(self) -> Optional["Snapshot"]:
-        return Snapshot.objects.filter(table=self).order_by("-created_at").first()
+        return self.snapshot_set.order_by("-created_at").first()
 
     @property
     def data_rows(self):
+        """
+        Ideally we would have snapshot for each action. However, we don't do
+        that. so, the rows for table at any moment is the application of all
+        the actions since the last snapshot.
+        """
+        # Importing here because this introduces circular import, which at the moment
+        # cannot be fixed properly
+        from apps.core.actions.utils import get_composed_action_for_action_object
+
         if self.last_snapshot is None:
             return []
-        return self.last_snapshot.data_rows
+        # TODO: paginate
+        if self.last_unapplied_action is not None:
+            # If there are any unapplied actions, fetch them, merge them into a
+            # single action and apply to the last snapshot row
+            composed_action = get_composed_action_for_action_object(
+                self.last_unapplied_action
+            )
+            return [
+                composed_action.apply_row(row) for row in self.last_snapshot.data_rows
+            ]
+        else:
+            return self.last_snapshot.data_rows
 
     @property
     def data_columns(self):
         if self.last_snapshot is None:
             return []
+        if self.last_unapplied_action is not None:
+            # Actually table_column_stats in action object contains all info about
+            # the updated columns, fetch data from there and return
+            stats = self.last_unapplied_action.table_column_stats
+            return [
+                {"key": stat["key"], "label": stat["label"], "type": stat["type"]}
+                for stat in stats
+            ]
         return self.last_snapshot.data_columns
 
     @property
     def data_column_stats(self):
+        """If there is unapplied action, return column stats from the action
+        else return stats from the snapshot
+        """
         if self.last_snapshot is None:
             return []
+        if self.last_unapplied_action is not None:
+            return self.last_unapplied_action.table_column_stats
         return self.last_snapshot.column_stats
 
     @cached_property
