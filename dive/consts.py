@@ -1,3 +1,4 @@
+from django.db import models
 import pytz
 
 MAX_FILE_SIZE_MB = 10  # 10 MB limit
@@ -245,3 +246,11 @@ COLUMN_TYPES = [
         "label": "Datetime",
     },
 ]
+
+
+class JOIN_CLAUSE_OPERATIONS(models.TextChoices):
+    EQUAL = ("equal", "Equal")
+    LESS = ("less", "Less")
+    GREATER = ("greater", "Greater")
+    LESS_EQUAL = ("less_equal", "Less or Equal")
+    GREATER_EQUAL = ("greater_equal", "Greater or Equal")
