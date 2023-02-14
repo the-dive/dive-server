@@ -51,8 +51,14 @@ class Table(BaseModel, NamedModelMixin):
     extra_data = models.JSONField(default=dict)
     has_errored = models.BooleanField(default=False)
     error = models.TextField(null=True, blank=True)
-    cloned_from = models.ForeignKey(
+    cloned_from = models.OneToOneField(
         "Table",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    joined_from = models.OneToOneField(
+        "Join",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -221,3 +227,19 @@ class Action(BaseModel, NamedModelMixin):
                 "Cannot update fields table, order, action_name and parameters after creation"
             )
         super().save(*args, **kwargs)
+
+
+class Join(BaseModel):
+    class JoinType(models.TextChoices):
+        INNER_JOIN = "inner_join", _("Inner Join")
+        OUTER_JOIN = "outer_join", _("Outer Join")
+        LEFT_JOIN = "left_join", _("Left Join")
+        RIGHT_JOIN = "right_join", _("Right Join")
+
+    source_table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='join_sources')
+    target_table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='join_targets')
+    join_type = models.CharField(max_length=20, choices=JoinType.choices)
+    clauses = models.JSONField(default=list)
+
+    def __str__(self):
+        return f'{self.source_table}::{self.join_type}::{self.target_table}'
