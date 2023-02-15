@@ -27,7 +27,7 @@ def get_col_type_from_pd_type(pd_type) -> ColumnTypes:
     if "int" in pd_type_str:
         return ColumnTypes.INTEGER
     elif "float" in pd_type_str:
-        return ColumnTypes.FLOATING
+        return ColumnTypes.FLOAT
     elif "datetime" in pd_type_str:
         return ColumnTypes.DATETIME
     return ColumnTypes.STRING
@@ -81,8 +81,8 @@ def extract_data_from_excel(
         # Add an attribute key to each the row item, it's okay if it is later replaced
         # It's just that we need to have a unique key field in each row
         row: Dict[str, Any] = {"key": str(i)}
-        for col in columns:
-            val = df.loc[i, col["label"]]
+        for j, col in enumerate(columns):
+            val = df.iloc[i, j]
             parsed = parse(val, col["type"])
             should_strip = col["type"] == ColumnTypes.STRING and trimWhitespaces
             row[col["key"]] = str(parsed).strip() if should_strip else parsed
@@ -144,7 +144,7 @@ def calculate_column_stats(data_rows: List[Dict[str, Any]], columns: List[Column
 def calculate_single_column_stats(items: list, coltype: ColumnTypes) -> ColumnStats:
     if coltype == ColumnTypes.INTEGER:
         return calculate_stats_for_numeric_col(items)
-    elif coltype == ColumnTypes.FLOATING:
+    elif coltype == ColumnTypes.FLOAT:
         return calculate_stats_for_numeric_col(items)
     else:
         return calculate_stats_for_string_col(items)

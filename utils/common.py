@@ -8,7 +8,7 @@ class ColumnTypes(models.TextChoices):
     STRING = "string", _("String")
     NUMBER = "number", _("Number")
     INTEGER = "integer", _("Integer")
-    FLOATING = "floating", _("Floating")
+    FLOAT = "float", _("Float")
     DATE = "date", _("Date")
     TIME = "time", _("Time")
     DATETIME = "datetime", _("Date time")
