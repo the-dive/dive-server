@@ -70,20 +70,9 @@ def extract_data_from_excel(
 
     df.replace(na_replacement, inplace=True)
 
-    # Store map of column index and type information
-    coltypes: Dict[int, ColumnTypes] = {
-        i: get_col_type_from_pd_type(t) for i, t in enumerate(df.dtypes)
-    }
-
-    df_dict: Dict[str, list] = df.to_dict("list")
-
     columns: List[Column] = [
-        {
-            "key": str(i),
-            "label": str(col),
-            "type": coltypes[i],
-        }
-        for i, col in enumerate(df_dict.keys())
+        {"key": str(i), "label": str(col), "type": get_col_type_from_pd_type(coltype)}
+        for i, (col, coltype) in enumerate(zip(df.columns, df.dtypes))
     ]
 
     trimWhitespaces = table_properties.get("trimWhitespaces", False)
@@ -92,11 +81,11 @@ def extract_data_from_excel(
         # Add an attribute key to each the row item, it's okay if it is later replaced
         # It's just that we need to have a unique key field in each row
         row: Dict[str, Any] = {"key": str(i)}
-        for j, col in enumerate(df.columns):
-            val = df.loc[i, col]
-            parsed = parse(val, coltypes[j])
-            should_strip = coltypes[j] == ColumnTypes.STRING and trimWhitespaces
-            row[str(j)] = str(parsed).strip() if should_strip else parsed
+        for col in columns:
+            val = df.loc[i, col["label"]]
+            parsed = parse(val, col["type"])
+            should_strip = col["type"] == ColumnTypes.STRING and trimWhitespaces
+            row[col["key"]] = str(parsed).strip() if should_strip else parsed
         return row
 
     rows = [get_ith_row_from_df(i) for i in range(len(df))]
@@ -105,7 +94,7 @@ def extract_data_from_excel(
         "rows": rows,
         "columns": columns,
         "extra_headers": extra_headers,
-        "column_stats": calculate_column_stats(df_dict, coltypes)
+        "column_stats": calculate_column_stats(rows, columns)
         if calculate_stats
         else None,
     }
@@ -129,24 +118,24 @@ def extract_extra_headers(
     return [[str(e) for e in row] for row in df.itertuples(index=False)]
 
 
-def calculate_column_stats(df_dict: dict, coltypes: Dict[int, ColumnTypes]):
+def calculate_column_stats(data_rows: List[Dict[str, Any]], columns: List[Column]):
     """
     Calculate column wise stats.
-    df_dict is a dict of the form:
-        {
-            col1: [item1, item2, ...],
-            col2: [item1, item2, ...],
-        }
+    data_rows is a list of the form:
+        [
+            { col1: val1, col2: val2, ...}
+            ...
+        ]
     which is the result of dataframe.to_dict()
     """
     column_stats = []
-    for index, (colname, coltype) in enumerate(zip(df_dict.keys(), coltypes.values())):
-        single_column_stats = calculate_single_column_stats(df_dict[colname], coltype)
+    for col in columns:
+        colkey = col["key"]
+        col_items = [row[colkey] for row in data_rows]
+        single_column_stats = calculate_single_column_stats(col_items, col["type"])
         column_info = {
             **single_column_stats,
-            "key": str(index),
-            "label": colname,
-            "type": coltype,
+            **col,
         }
         column_stats.append(column_info)
     return column_stats
