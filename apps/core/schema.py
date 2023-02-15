@@ -55,6 +55,22 @@ class TablePropertiesType(graphene.ObjectType):
         return root.get("treatTheseAsNa")
 
 
+class TableColumnStatsType(graphene.ObjectType):
+    key = graphene.String(required=True)
+    type = graphene.String(required=True)
+    label = graphene.String(required=True)
+    na_count = graphene.Int(required=True)
+    max_length = graphene.Int()
+    min_length = graphene.Int()
+    total_count = graphene.Int(required=True)
+    unique_count = graphene.Int()
+    max = graphene.Float()
+    min = graphene.Float()
+    median = graphene.Float()
+    std_deviation = graphene.Float()
+    mean = graphene.Float()
+
+
 class TableType(DjangoObjectType):
     class Meta:
         model = Table
@@ -73,7 +89,7 @@ class TableType(DjangoObjectType):
     status_display = EnumDescription(source="get_status_display")
     preview_data = GenericScalar()
     properties = graphene.Field(TablePropertiesType)
-    data_column_stats = GenericScalar(source="data_column_stats")
+    data_column_stats = graphene.List(TableColumnStatsType, source="data_column_stats")
     data_rows = GenericScalar(source="data_rows")
     rows_count = graphene.Int()
     columns_count = graphene.Int()
