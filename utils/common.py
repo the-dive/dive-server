@@ -22,3 +22,8 @@ def to_camelcase(snake_str):
 
 def get_file_extension(file_path: str):
     return os.path.splitext(file_path)[1].replace(".", "")
+
+
+def float_r(val):
+    """Convert to float and round to 5 points"""
+    return round(float(val), 5)

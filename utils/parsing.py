@@ -1,6 +1,6 @@
 from typing import Type, Any, Optional
 
-from .common import ColumnTypes
+from .common import ColumnTypes, float_r
 
 
 def parse(val: Optional[Any], coltype: Any) -> str | int | float | None:
@@ -28,4 +28,4 @@ def parse_int(val: Optional[str]):
 
 
 def parse_float(val: Optional[str]):
-    return parse_type(float, val)
+    return parse_type(float_r, val)

@@ -10,7 +10,7 @@ from typing import (
 import pandas as pd
 import numpy as np
 
-from .common import ColumnTypes
+from .common import ColumnTypes, float_r
 from .parsing import parse_int, parse
 from apps.core.types import TablePropertiesDict, ExtractedData, ColumnStats, Column
 
@@ -19,7 +19,7 @@ PreviewResult = Union[
     Tuple[ExtractedData, Optional[str]], Tuple[Optional[ExtractedData], str]
 ]
 
-INFINITY = 999999
+INFINITY = float("inf")
 
 
 def get_col_type_from_pd_type(pd_type) -> ColumnTypes:
@@ -153,11 +153,11 @@ def calculate_single_column_stats(items: list, coltype: ColumnTypes) -> ColumnSt
 def calculate_stats_for_numeric_col(items: list) -> ColumnStats:
     # TODO: optimize the list(use np/pd). But this should happen from the extraction phase itself
     return {
-        "min": float(np.min(items)),
-        "max": float(np.max(items)),
-        "mean": float(np.mean(items)),
-        "median": float(np.median(items)),
-        "std_deviation": float(np.std(items)),
+        "min": float_r(np.min(items)),
+        "max": float_r(np.max(items)),
+        "mean": float_r(np.mean(items)),
+        "median": float_r(np.median(items)),
+        "std_deviation": float_r(np.std(items)),
         "total_count": len(items),
         "na_count": len([x for x in items if x is None]),
     }
@@ -176,10 +176,12 @@ def calculate_stats_for_string_col(items: list) -> ColumnStats:
             min_len = length
 
     # TODO: optimize the following calculations
+    non_null_items = [x for x in items if x is None]
     return {
         "total_count": len(items),
-        "na_count": len([x for x in items if x is None]),
-        "unique_count": len(set(items)),
+        "na_count": len(non_null_items),
+        "unique_count": len(set(non_null_items)),
         "max_length": max_len,
-        "min_length": min_len,
+        "min_length": 0 if min_len == INFINITY else int(min_len),
+        # NOTE: Need to cast min_length to int although it is guranteed to be an int becauese of mypy error
     }
