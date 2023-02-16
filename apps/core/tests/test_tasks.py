@@ -1,6 +1,7 @@
 from typing import List
 from unittest import mock
 from django.test import TestCase
+from django.core.exceptions import ValidationError
 
 from dive.base_test import BaseTestWithDataFrameAndExcel
 from apps.core.models import Snapshot, Action, Join
@@ -77,6 +78,35 @@ class TestJoinTasks(TestCase):
             "target_column": "id",
             "operation": JOIN_CLAUSE_OPERATIONS.EQUAL,
         }
+
+    def test_join_invalid_clauses_data(self):
+        invalid_clauses = [
+            (
+                {"source_column": "0", "target_column": "1", "operation": "equal"},
+                "Should be list",
+            ),
+            (
+                [{"source_clumn": "0", "operation": "equal"}],
+                "Should have target_column",
+            ),
+            (
+                [{"source_clumn": "0", "target_column": "2", "operation": "equalss"}],
+                "Should have valid operation",
+            ),
+        ]
+        source_table = TableFactory.create()
+        target_table = TableFactory.create()
+        for invalid_clause, msg in invalid_clauses:
+            try:
+                JoinFactory.create(
+                    clauses=invalid_clause,
+                    source_table=source_table,
+                    target_table=target_table,
+                )
+            except ValidationError:
+                pass
+            else:
+                assert False, msg
 
     def test_join_task(self):
         dataset = DatasetFactory.create()
