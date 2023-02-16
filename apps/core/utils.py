@@ -1,13 +1,19 @@
+from typing import List, Dict, Tuple, Any
+from collections import defaultdict
 import os
 import pandas as pd
+import logging
 
 from django.db import transaction
 
+from dive.consts import JOIN_CLAUSE_OPERATIONS
 from apps.file.models import File
-from apps.core.models import Table, Dataset
+from apps.core.models import Table, Dataset, Join, Snapshot
 from apps.core.validators import get_default_table_properties
 from utils.extraction import extract_preview_data_from_excel
 from utils.common import get_file_extension
+
+logger = logging.getLogger(__name__)
 
 
 def apply_table_properties_and_extract_preview(table: Table):
@@ -79,3 +85,121 @@ def create_dataset_and_tables(file: File) -> Dataset:
         # TODO: Handle gracefully, or should we? because serializer already validates extension
         raise Exception("Invalid file type")
     return dataset
+
+
+def perform_hash_join(joined_table: Table) -> Snapshot:
+    """
+    Perform hash based join. Make sure there is only one equality clause.
+    """
+    join_obj = joined_table.joined_from
+    assert join_obj is not None, f"Table(id: {joined_table.pk}) should have join object"
+    assert len(join_obj.clauses) == 1
+    assert join_obj.clauses[0]["operation"] == JOIN_CLAUSE_OPERATIONS.EQUAL
+
+    clause = join_obj.clauses[0]
+    source_table, target_table = join_obj.source_table, join_obj.target_table
+
+    """
+    After joining, some column names might overlap In such case we
+    leave the overlapping source column key as it is and only
+    modify keys for target, for which we will just append _<table_id>.
+    """
+    new_cols, new_rows, new_stats = perform_hash_join_(
+        clause=clause,
+        source_cols=source_table.data_columns,
+        target_cols=target_table.data_columns,
+        source_rows=source_table.data_rows,
+        target_rows=target_table.data_rows,
+        source_stats=source_table.data_column_stats,
+        target_stats=target_table.data_column_stats,
+        join_type=join_obj.join_type,
+        conflicting_col_suffix=str(target_table.id),
+    )
+    # Create a snapshot
+    return Snapshot.objects.create(
+        table=joined_table,
+        version=1,
+        data_rows=new_rows,
+        data_columns=new_cols,
+        column_stats=new_stats,
+    )
+
+
+def perform_hash_join_(
+    clause,
+    source_cols,
+    target_cols,
+    source_rows,
+    target_rows,
+    source_stats,
+    target_stats,
+    join_type,
+    conflicting_col_suffix="_1",
+) -> Tuple[List, List, List]:
+    source_col = clause["source_column"]
+    target_col = clause["target_column"]
+    # TODO: implement other joins
+    assert join_type == Join.JoinType.INNER_JOIN, "Only inner join is supported"
+
+    # First create index on target columns which has the following structure
+    # { value: [row_index1, row_index2] }
+    target_index: Dict[str, List[int]] = create_column_index(target_col, target_rows)
+
+    # Next, we need to find appropriate target column key names. Because, the two
+    # tables might have same keyed cols
+    source_col_keys = set([x["key"] for x in source_cols])
+    target_col_keys = set([x["key"] for x in target_cols])
+    common_keys = source_col_keys.intersection(target_col_keys)
+
+    # The idea is to append the target column key name with the append
+    # parameter to maintain uniqueness of columns
+    target_col_key_map = {
+        key: key
+        if key not in common_keys
+        else f"{key}{conflicting_col_suffix}"
+        for key in target_col_keys
+    }
+
+    updated_target_cols = [
+        {**col, "key": target_col_key_map[col["key"]]}
+        for col in target_cols
+    ]
+    new_columns = source_cols + updated_target_cols
+
+    updated_target_stats = [
+        {**stat, "key": target_col_key_map[stat["key"]]}
+        for stat in target_stats
+    ]
+    new_stats = source_stats + updated_target_stats
+
+    def merge(source_row, target_row):
+        new_target_row = {
+            target_col_key_map[k]: v
+            for k, v in target_row.items()
+        }
+        return {**source_row, **new_target_row}
+
+    # Now iterate over source rows and perform join
+    joined_rows: list = []
+    for row in source_rows:
+        source_val = row[source_col]
+        target_row_indices = target_index.get(source_val) or []
+        for target_ind in target_row_indices:
+            joined_row = merge(row, target_rows[target_ind])
+            joined_rows.append(joined_row)
+    return new_columns, joined_rows, new_stats
+
+
+def perform_naive_join(table: Table, join_obj: Join):
+    assert table.joined_from == join_obj
+    raise Exception("not implemented")
+
+
+def create_column_index(target_col: str, rows: list) -> Dict[str, List[int]]:
+    index: Dict[Any, List[int]] = defaultdict(list)
+    for i, row in enumerate(rows):
+        value = row[target_col]
+        if value is None:
+            continue
+        index[value].append(i)
+    return index

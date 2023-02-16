@@ -1,6 +1,6 @@
 from factory.django import DjangoModelFactory
 
-from .models import Dataset, Table
+from .models import Dataset, Table, Snapshot, Join
 
 
 class DatasetFactory(DjangoModelFactory):
@@ -11,3 +11,13 @@ class DatasetFactory(DjangoModelFactory):
 class TableFactory(DjangoModelFactory):
     class Meta:
         model = Table
+
+
+class SnapshotFactory(DjangoModelFactory):
+    class Meta:
+        model = Snapshot
+
+
+class JoinFactory(DjangoModelFactory):
+    class Meta:
+        model = Join
