@@ -13,6 +13,7 @@ from utils.graphene.enums import EnumDescription
 from apps.core.models import (
     Dataset,
     Table,
+    Join,
 )
 from apps.core.filter_set import DatasetFilter, TableFilter
 from dive.consts import (
@@ -71,6 +72,12 @@ class TableColumnStatsType(graphene.ObjectType):
     mean = graphene.Float()
 
 
+class JoinType(DjangoObjectType):
+    class Meta:
+        model = Join
+        fields = ("id", "clauses", "source_table", "target_table", "join_type")
+
+
 class TableType(DjangoObjectType):
     class Meta:
         model = Table
@@ -84,6 +91,8 @@ class TableType(DjangoObjectType):
             "cloned_from",
             "data_column_stats",
             "data_rows",
+            "joined_from",
+            "original_name",
         )
 
     status_display = EnumDescription(source="get_status_display")

@@ -15,7 +15,7 @@ from dive.base_test import (
     TEST_FILE_PATH,
     BaseTestWithDataFrameAndExcel,
 )
-from apps.core.models import Dataset, Table, Action
+from apps.core.models import Dataset, Table, Action, Join
 from apps.core.tasks import create_snapshot_for_table
 from apps.core.factories import DatasetFactory, TableFactory
 
@@ -300,3 +300,57 @@ class TestTableActions(GraphQLTestCase, BaseTestWithDataFrameAndExcel, TestCase)
         new_action = Action.objects.filter(order=1, table=self.table).last()
         assert new_action is not None
         col_stats_delay_func.assert_called_with(new_action.pk)
+
+
+@override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
+class TestTableJoinMutation(GraphQLTestCase, BaseTestWithDataFrameAndExcel, TestCase):
+    def setUp(self):
+        super().setUp()
+        self.join_mutation = """
+            mutation Mutation($tableId: ID! $data: TableJoinInputType!) {
+                tableJoin(id: $tableId, data: $data) {
+                    ok
+                    errors
+                    result {
+                        joinedFrom {
+                            id
+                            targetTable {
+                                id
+                            }
+                            sourceTable {
+                                id
+                            }
+                        }
+                        originalName
+                        id
+                    }
+                }
+            }
+        """
+        self.source_table = TableFactory.create(name="Source Table")
+        self.target_table = TableFactory.create(name="Target Table")
+        self.variables = {
+            "tableId": self.source_table.id,
+            "data": {
+                "targetTable": self.target_table.id,
+                "joinType": self.genum(Join.JoinType.INNER_JOIN),
+                "clauses": json.dumps(
+                    {
+                        "source_column": "person_id",
+                        "target_column": "id",
+                        "operator": "equal",
+                    }
+                ),
+            },
+        }
+
+    @mock.patch("apps.core.mutations.perform_join.delay")
+    def test_table_join(self, table_join_delay_func):
+        with self.captureOnCommitCallbacks(execute=True):
+            resp_data = self.query_check(
+                self.join_mutation,
+                variables=self.variables,
+            )
+        content = resp_data["data"]["tableJoin"]
+        assert content["ok"] is True
+        table_join_delay_func.assert_called_with(int(content["result"]["id"]))

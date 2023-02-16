@@ -2,7 +2,7 @@ from jsonschema import validate, ValidationError as JSONValidationError
 from rest_framework import serializers
 
 
-from .models import Table
+from .models import Table, Join
 from .validators import table_properties_schema
 
 
@@ -32,3 +32,9 @@ class TableUpdateSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("status", "preview_data", "has_errored", "error", "dataset")
         model = Table
+
+
+class TableJoinSeralizer(serializers.ModelSerializer):
+    class Meta:
+        model = Join
+        fields = ("target_table", "join_type", "clauses")

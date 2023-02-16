@@ -20,15 +20,18 @@ from apps.file.serializers import FileSerializer, File
 from apps.core.utils import create_dataset_and_tables
 
 from utils.decorators import lift_mutate_with_instance
-from .serializers import TablePropertiesSerializer
-from .models import Table, Action
+from .serializers import TablePropertiesSerializer, TableJoinSeralizer
+from .models import Table, Action, Join
 from .utils import apply_table_properties_and_extract_preview
-from .tasks import extract_table_data, calculate_column_stats_for_action
+from .tasks import extract_table_data, calculate_column_stats_for_action, perform_join
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
     "TablePropertiesInputType",
     TablePropertiesSerializer,
+)
+TableJoinInputType = generate_input_type_for_serializer(
+    "TableJoinInputType", TableJoinSeralizer
 )
 
 
@@ -196,6 +199,44 @@ class PerformTableAction(graphene.Mutation):
         return PerformTableAction(result=action_obj.id, errors=None, ok=True)
 
 
+class TableJoinMutation(graphene.Mutation):
+    class Arguments:
+        data = TableJoinInputType(required=True)
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    @lift_mutate_with_instance(Table)
+    def mutate(table, root, info, id, data: Any):
+        target_table = data["target_table"]
+        join_type = data["join_type"]
+        clauses = data.get("clauses")
+
+        # create Join
+        join = Join.objects.create(
+            source_table=Table.objects.filter(id=id).first(),
+            target_table=Table.objects.filter(id=target_table).first(),
+            join_type=join_type,
+            clauses=clauses,
+        )
+
+        # create table from the joined
+
+        joined_original_name = (
+            join.source_table.name + " : " + "JOIN" + " : " + join.target_table.name
+        )
+        joined_table = Table.objects.create(
+            original_name=joined_original_name, joined_from=join
+        )
+
+        # call background task to perform join
+        transaction.on_commit(lambda: perform_join.delay(joined_table.id))
+        return TableJoinMutation(result=joined_table, errors=None, ok=True)
+
+
 class Mutation:
     create_dataset = CreateDataset.Field()
     add_table_to_workspace = AddTableToWorkSpace.Field()
@@ -204,3 +245,4 @@ class Mutation:
     update_table_properties = UpdateTableProperties.Field()
     rename_table = RenameTable.Field()
     table_action = PerformTableAction.Field()
+    table_join = TableJoinMutation.Field()
