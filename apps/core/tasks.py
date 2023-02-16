@@ -71,11 +71,12 @@ def perform_join(table_id: int):
 
     clauses = join_obj.clauses
     is_join_with_equi_clause = (
-        len(clauses) == 1 and
-        clauses[0]["operation"] == JOIN_CLAUSE_OPERATIONS.EQUAL
+        len(clauses) == 1 and clauses[0]["operation"] == JOIN_CLAUSE_OPERATIONS.EQUAL
     )
     if is_join_with_equi_clause:
         perform_hash_join(table)
     else:
-        logger.warning("Performing inefficient join since there are multiple clauses or non equal operations")
+        logger.warning(
+            "Performing inefficient join since there are multiple clauses or non equal operations"
+        )
         perform_naive_join(table, join_obj)

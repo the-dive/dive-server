@@ -8,7 +8,11 @@ from django.utils.functional import cached_property
 
 from dive.base_models import BaseModel, NamedModelMixin
 from apps.file.models import File
-from .validators import validate_table_properties, get_default_table_properties
+from .validators import (
+    validate_table_properties,
+    get_default_table_properties,
+    validate_join_clauses,
+)
 
 
 class Dataset(BaseModel, NamedModelMixin):
@@ -236,10 +240,14 @@ class Join(BaseModel):
         LEFT_JOIN = "left_join", _("Left Join")
         RIGHT_JOIN = "right_join", _("Right Join")
 
-    source_table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='join_sources')
-    target_table = models.ForeignKey(Table, on_delete=models.CASCADE, related_name='join_targets')
+    source_table = models.ForeignKey(
+        Table, on_delete=models.CASCADE, related_name="join_sources"
+    )
+    target_table = models.ForeignKey(
+        Table, on_delete=models.CASCADE, related_name="join_targets"
+    )
     join_type = models.CharField(max_length=20, choices=JoinType.choices)
-    clauses = models.JSONField(default=list)
+    clauses = models.JSONField(default=list, validators=[validate_join_clauses])
 
     def __str__(self):
-        return f'{self.source_table}::{self.join_type}::{self.target_table}'
+        return f"{self.source_table}::{self.join_type}::{self.target_table}"
