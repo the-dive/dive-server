@@ -1,3 +1,4 @@
+from typing import Any
 from jsonschema import validate, ValidationError as JSONValidationError
 from django.core.exceptions import ValidationError
 
@@ -67,8 +68,19 @@ def get_default_table_properties() -> TablePropertiesDict:
 
 
 def validate_table_properties(properties: dict):
-    try:
-        validate(properties, table_properties_schema)
-    except JSONValidationError as e:
-        msg = e.message[:200] + "..." if len(e.message) > 200 else e.message
-        raise ValidationError(f"Invalid properties data: {msg}")
+    validate_with_schema(table_properties_schema)(properties)
+
+
+def validate_join_clauses(clauses: list):
+    validate_with_schema(join_clause_schema)(clauses)
+
+
+def validate_with_schema(schema: Any):
+    def validator(data):
+        try:
+            validate(data, schema)
+        except JSONValidationError as e:
+            msg = e.message[:200] + "..." if len(e.message) > 200 else e.message
+            raise ValidationError(f"Invalid data: {msg}")
+
+    return validator

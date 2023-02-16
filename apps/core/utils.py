@@ -154,29 +154,22 @@ def perform_hash_join_(
     # The idea is to append the target column key name with the append
     # parameter to maintain uniqueness of columns
     target_col_key_map = {
-        key: key
-        if key not in common_keys
-        else f"{key}{conflicting_col_suffix}"
+        key: key if key not in common_keys else f"{key}{conflicting_col_suffix}"
         for key in target_col_keys
     }
 
     updated_target_cols = [
-        {**col, "key": target_col_key_map[col["key"]]}
-        for col in target_cols
+        {**col, "key": target_col_key_map[col["key"]]} for col in target_cols
     ]
     new_columns = source_cols + updated_target_cols
 
     updated_target_stats = [
-        {**stat, "key": target_col_key_map[stat["key"]]}
-        for stat in target_stats
+        {**stat, "key": target_col_key_map[stat["key"]]} for stat in target_stats
     ]
     new_stats = source_stats + updated_target_stats
 
     def merge(source_row, target_row):
-        new_target_row = {
-            target_col_key_map[k]: v
-            for k, v in target_row.items()
-        }
+        new_target_row = {target_col_key_map[k]: v for k, v in target_row.items()}
         return {**source_row, **new_target_row}
 
     # Now iterate over source rows and perform join

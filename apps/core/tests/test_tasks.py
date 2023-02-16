@@ -3,7 +3,7 @@ from unittest import mock
 from django.test import TestCase
 
 from dive.base_test import BaseTestWithDataFrameAndExcel
-from apps.core.models import Snapshot, Action, Table, Join
+from apps.core.models import Snapshot, Action, Join
 from utils.common import ColumnTypes
 from dive.consts import JOIN_CLAUSE_OPERATIONS
 from apps.core.factories import (
@@ -62,8 +62,16 @@ class TestExtractionTasks(BaseTestWithDataFrameAndExcel):
 class TestJoinTasks(TestCase):
     def setUp(self):
         self.join_type = Join.JoinType.INNER_JOIN
-        self.source_columns, self.source_stats, self.source_rows = self.get_source_data()
-        self.target_columns, self.target_stats, self.target_rows = self.get_target_data()
+        (
+            self.source_columns,
+            self.source_stats,
+            self.source_rows,
+        ) = self.get_source_data()
+        (
+            self.target_columns,
+            self.target_stats,
+            self.target_rows,
+        ) = self.get_target_data()
         self.clause = {
             "source_column": "id",
             "target_column": "id",
@@ -98,12 +106,16 @@ class TestJoinTasks(TestCase):
             join_type=self.join_type,
         )
         new_table = TableFactory.create(dataset=dataset, joined_from=join_object)
-        assert Snapshot.objects.filter(table=new_table).first() is None, "There must be no snapshot"
+        assert (
+            Snapshot.objects.filter(table=new_table).first() is None
+        ), "There must be no snapshot"
         perform_join(new_table.id)
 
         # Check for snapshot and data
         joined_snapshot = Snapshot.objects.filter(table=new_table).first()
-        assert joined_snapshot is not None, "There must be snapshot after join operation"
+        assert (
+            joined_snapshot is not None
+        ), "There must be snapshot after join operation"
         self._test_expectation(
             joined_snapshot.data_columns,
             joined_snapshot.data_rows,
@@ -126,7 +138,9 @@ class TestJoinTasks(TestCase):
         )
         self._test_expectation(new_cols, new_rows, new_stats, suffix)
 
-    def _test_expectation(self, new_cols: List, new_rows: List, new_stats: List, suffix: str):
+    def _test_expectation(
+        self, new_cols: List, new_rows: List, new_stats: List, suffix: str
+    ):
         # There are 3 cols in source table and 3 in target table
         assert len(new_cols) == 6, "There must be total of 6 columns"
         new_keys = [x["key"] for x in new_cols]
