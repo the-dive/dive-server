@@ -37,6 +37,7 @@ table_properties_schema = {
 }
 
 join_clause_schema = {
+    "schema": "http://json-schema.org/draft-07/schema#",
     "type": "array",
     "items": {
         "additionalProperties": False,

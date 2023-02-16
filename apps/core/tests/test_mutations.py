@@ -18,7 +18,7 @@ from dive.base_test import (
 from apps.core.models import Dataset, Table, Action, Join
 from apps.core.tasks import create_snapshot_for_table
 from apps.core.factories import DatasetFactory, TableFactory
-
+from dive.consts import JOIN_CLAUSE_OPERATIONS
 from dive.base_test import create_test_file
 
 
@@ -335,11 +335,13 @@ class TestTableJoinMutation(GraphQLTestCase, BaseTestWithDataFrameAndExcel, Test
                 "targetTable": self.target_table.id,
                 "joinType": self.genum(Join.JoinType.INNER_JOIN),
                 "clauses": json.dumps(
-                    {
-                        "source_column": "person_id",
-                        "target_column": "id",
-                        "operator": "equal",
-                    }
+                    [
+                        {
+                            "source_column": "person_id",
+                            "target_column": "id",
+                            "operation": JOIN_CLAUSE_OPERATIONS.EQUAL,
+                        }
+                    ]
                 ),
             },
         }

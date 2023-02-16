@@ -30,7 +30,6 @@ class Dataset(BaseModel, NamedModelMixin):
     has_errored = models.BooleanField(default=False)
     error = models.TextField(null=True, blank=True)
     metadata = models.JSONField(default=dict)
-    extra_data = models.JSONField(default=dict)
 
 
 class Table(BaseModel, NamedModelMixin):
@@ -54,7 +53,6 @@ class Table(BaseModel, NamedModelMixin):
     )
     preview_data = models.JSONField(blank=True, null=True)
     is_added_to_workspace = models.BooleanField(default=False)
-    extra_data = models.JSONField(default=dict)
     has_errored = models.BooleanField(default=False)
     error = models.TextField(null=True, blank=True)
     cloned_from = models.OneToOneField(
@@ -147,6 +145,10 @@ class Table(BaseModel, NamedModelMixin):
     @cached_property
     def source_type(self):
         return self.dataset.file.file_type
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # needed for json validation
+        return super().save(*args, **kwargs)
 
 
 class Snapshot(BaseModel):
@@ -256,3 +258,7 @@ class Join(BaseModel):
 
     def __str__(self):
         return f"{self.source_table}::{self.join_type}::{self.target_table}"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

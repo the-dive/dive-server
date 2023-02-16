@@ -229,7 +229,9 @@ class TableJoinMutation(graphene.Mutation):
             join.source_table.name + " : " + "JOIN" + " : " + join.target_table.name
         )
         joined_table = Table.objects.create(
-            original_name=joined_original_name, joined_from=join
+            name=joined_original_name,
+            original_name=joined_original_name,
+            joined_from=join,
         )
 
         # call background task to perform join

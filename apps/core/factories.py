@@ -1,3 +1,4 @@
+import factory
 from factory.django import DjangoModelFactory
 
 from .models import Dataset, Table, Snapshot, Join
@@ -9,6 +10,9 @@ class DatasetFactory(DjangoModelFactory):
 
 
 class TableFactory(DjangoModelFactory):
+    name = factory.fuzzy.FuzzyText()
+    original_name = factory.fuzzy.FuzzyText()
+
     class Meta:
         model = Table
 
