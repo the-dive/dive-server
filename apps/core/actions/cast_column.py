@@ -18,6 +18,7 @@ class CastColumnAction(BaseAction):
             return is_valid, err
         _, target_type = params
         if target_type not in [
+            ColumnTypes.NUMBER,
             ColumnTypes.INTEGER,
             ColumnTypes.STRING,
         ]:  # TODO: add other types
