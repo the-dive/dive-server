@@ -16,7 +16,14 @@ STRING_STAT_KEYS = [
     "max_length",
     "min_length",
 ]
-NUMERIC_STAT_KEYS = ["min", "max", "median", "std_deviation", "total_count", "na_count"]
+NUMERIC_STAT_KEYS = [
+    "total_count",
+    "na_count",
+    "min",
+    "max",
+    "median",
+    "std_deviation",
+]
 
 
 def test_get_action_class_invalid_name():
@@ -167,3 +174,41 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
         assert isinstance(
             first_row_after_action[colkey], str
         ), "After action, col is string"
+
+    def test_cast_row_to_number(self):
+        data = [
+            {"name": "Dive", "age": "1", "bmi": "13.5"},
+            {"name": "Deep", "age": None, "bmi": "18.0"},
+            {"name": "DEEPL", "age": "3", "bmi": "eighteen"},
+        ]
+        age_casted_expected = [
+            {"name": "Dive", "age": 1, "bmi": "13.5"},
+            {"name": "Deep", "age": None, "bmi": "18.0"},
+            {"name": "DEEPL", "age": 3, "bmi": "eighteen"},
+        ]
+        bmi_casted_expected = [
+            {"name": "Dive", "age": "1", "bmi": 13.5},
+            {"name": "Deep", "age": None, "bmi": 18.0},
+            {"name": "DEEPL", "age": "3", "bmi": None},
+        ]
+        # Test cast age
+        colkey = "age"
+        params = [colkey, "number"]
+        action = CastColumnAction(params, self.table)
+        # Set is_valid true because the constructor requires table and params
+        # to be consistent but we don't care about that for testing apply_row
+        action.is_valid = True
+
+        age_casted = [action.apply_row(row) for row in data]
+        assert age_casted == age_casted_expected
+
+        # Test cast bmi
+        colkey = "bmi"
+        params = [colkey, "number"]
+        action = CastColumnAction(params, self.table)
+        # Set is_valid true because the constructor requires table and params
+        # to be consistent but we don't care about that for testing apply_row
+        action.is_valid = True
+
+        bmi_casted = [action.apply_row(row) for row in data]
+        assert bmi_casted == bmi_casted_expected

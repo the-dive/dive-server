@@ -13,6 +13,8 @@ def parse(val: Optional[Any], coltype: Any) -> str | int | float | None:
         return parse_int(strval)
     elif coltype == ColumnTypes.FLOAT:
         return parse_float(strval)
+    elif coltype == ColumnTypes.NUMBER:
+        return parse_int(strval) or parse_float(strval)
     return strval
 
 
