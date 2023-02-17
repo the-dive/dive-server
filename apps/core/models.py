@@ -227,6 +227,9 @@ class Action(BaseModel, NamedModelMixin):
     class Meta:
         unique_together = ("table", "order")
 
+    def __str__(self):
+        return f"{self.action_name}: {self.table.name}"
+
     def save(self, *args, **kwargs):
         if (
             self.__table != self.table
