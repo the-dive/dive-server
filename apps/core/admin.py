@@ -1,6 +1,9 @@
 from django.contrib import admin
 
-from apps.core.models import Dataset, Table, Snapshot, Join
+from apps.core.models import Dataset, Table, Snapshot, Join, Action
+
+
+admin.site.register(Action)
 
 
 @admin.register(Dataset)

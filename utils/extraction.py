@@ -147,9 +147,7 @@ def calculate_column_stats(data_rows: List[Dict[str, Any]], columns: List[Column
 
 
 def calculate_single_column_stats(items: list, coltype: ColumnTypes) -> ColumnStats:
-    if coltype == ColumnTypes.INTEGER:
-        return calculate_stats_for_numeric_col(items)
-    elif coltype == ColumnTypes.FLOAT:
+    if coltype in [ColumnTypes.INTEGER, ColumnTypes.FLOAT, ColumnTypes.NUMBER]:
         return calculate_stats_for_numeric_col(items)
     else:
         return calculate_stats_for_string_col(items)
@@ -182,11 +180,11 @@ def calculate_stats_for_string_col(items: list) -> ColumnStats:
             min_len = length
 
     # TODO: optimize the following calculations
-    non_null_items = [x for x in items if x is None]
+    not_null_items = [x for x in items if x is not None]
     return {
         "total_count": len(items),
-        "na_count": len(non_null_items),
-        "unique_count": len(set(non_null_items)),
+        "na_count": len(not_null_items),
+        "unique_count": len(set(not_null_items)),
         "max_length": max_len,
         "min_length": 0 if min_len == INFINITY else int(min_len),
         # NOTE: Need to cast min_length to int although it is guranteed to be an int becauese of mypy error
