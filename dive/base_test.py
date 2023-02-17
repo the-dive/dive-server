@@ -94,7 +94,7 @@ DATA = {
         "Ram",
         "Sita",
     ],
-    "income": [x * 2000 for x in range(1, NUM_ROWS + 1)],
+    "income": [x * 2000.50 for x in range(1, NUM_ROWS + 1)],
 }
 
 DATAFRAME = pd.DataFrame(data=DATA)

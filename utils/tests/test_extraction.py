@@ -45,9 +45,7 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
         expected_columns = [
             {"key": "0", "label": "id", "type": ColumnTypes.INTEGER},
             {"key": "1", "label": "name", "type": ColumnTypes.STRING},
-            {"key": "2", "label": "income", "type": ColumnTypes.INTEGER},
-            # NOTE: If you look at the income column, there is .40, this is to make
-            # it parse as floating type. just having .00 parses it as integer
+            {"key": "2", "label": "income", "type": ColumnTypes.FLOAT},
         ]
         columns = preview_data["columns"]
         assert len(columns) == len(DATA.keys()), "Number of columns should match"
@@ -67,13 +65,11 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
         props = {**self.default_table_properties, "headerLevel": "2"}
         preview_data, _ = self.parse_excel_and_check_valid(props)
 
-        # validate columns
+        # Validate columns
         expected_columns = [
             {"key": "0", "label": "2", "type": ColumnTypes.INTEGER},
             {"key": "1", "label": "Morgan", "type": ColumnTypes.STRING},
-            {"key": "2", "label": "4000", "type": ColumnTypes.INTEGER},
-            # NOTE: If you look at the income column, there is .40, this is to make
-            # it parse as floating type. just having .00 parses it as integer
+            {"key": "2", "label": "4001", "type": ColumnTypes.FLOAT},
         ]
         columns = preview_data["columns"]
         assert len(columns) == len(DATA.keys()), "Number of columns should match"
@@ -89,7 +85,7 @@ class TestExtraction(BaseTestWithDataFrameAndExcel):
         extra_headers = preview_data["extra_headers"]
         expected_extra_headers = [
             ["id", "name", "income"],
-            ["1", "Sam", "2000"],
+            ["1", "Sam", "2000.5"],
         ]
         assert (
             extra_headers == expected_extra_headers

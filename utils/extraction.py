@@ -16,14 +16,15 @@ from apps.core.types import TablePropertiesDict, ExtractedData, ColumnStats, Col
 
 
 PreviewResult = Union[
-    Tuple[ExtractedData, Optional[str]], Tuple[Optional[ExtractedData], str]
+    Tuple[ExtractedData, Optional[str]],
+    Tuple[Optional[ExtractedData], str],
 ]
 
 INFINITY = float("inf")
 
 
 def get_col_type_from_pd_type(pd_type) -> ColumnTypes:
-    pd_type_str = str(pd_type)
+    pd_type_str = str(pd_type).lower()
     if "int" in pd_type_str:
         return ColumnTypes.INTEGER
     elif "float" in pd_type_str:
@@ -67,6 +68,10 @@ def extract_data_from_excel(
         np.nan: None,
         table_properties.get("treatTheseAsNa"): None,
     }
+
+    # convert_dtypes() is to prevent df from treating most cols as 'objects',
+    # instead try to parse the correct type
+    df = df.convert_dtypes()
 
     df.replace(na_replacement, inplace=True)
 
@@ -152,14 +157,15 @@ def calculate_single_column_stats(items: list, coltype: ColumnTypes) -> ColumnSt
 
 def calculate_stats_for_numeric_col(items: list) -> ColumnStats:
     # TODO: optimize the list(use np/pd). But this should happen from the extraction phase itself
+    not_null_items = [x for x in items if x is not None]
     return {
-        "min": float_r(np.min(items)),
-        "max": float_r(np.max(items)),
-        "mean": float_r(np.mean(items)),
-        "median": float_r(np.median(items)),
-        "std_deviation": float_r(np.std(items)),
+        "min": float_r(np.min(not_null_items)),
+        "max": float_r(np.max(not_null_items)),
+        "mean": float_r(np.mean(not_null_items)),
+        "median": float_r(np.median(not_null_items)),
+        "std_deviation": float_r(np.std(not_null_items)),
         "total_count": len(items),
-        "na_count": len([x for x in items if x is None]),
+        "na_count": len(items) - len(not_null_items),
     }
 
 
