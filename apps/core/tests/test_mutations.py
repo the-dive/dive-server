@@ -272,6 +272,10 @@ class TestTableActions(GraphQLTestCase, BaseTestWithDataFrameAndExcel, TestCase)
                 tableAction(id: $tableId action: $action) {
                     ok
                     errors
+                    result {
+                        id
+                        name
+                    }
                 }
             }
         """
@@ -300,6 +304,7 @@ class TestTableActions(GraphQLTestCase, BaseTestWithDataFrameAndExcel, TestCase)
         new_action = Action.objects.filter(order=1, table=self.table).last()
         assert new_action is not None
         col_stats_delay_func.assert_called_with(new_action.pk)
+        self.assertEqual(content["result"]["id"], str(self.variables["tableId"]))
 
 
 @override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)
