@@ -166,7 +166,7 @@ class PerformTableAction(graphene.Mutation):
 
     errors = graphene.List(graphene.NonNull(CustomErrorType))
     ok = graphene.Boolean()
-    result = graphene.Int()
+    result = graphene.Field(TableType)
 
     @staticmethod
     @lift_mutate_with_instance(Table)
@@ -196,7 +196,7 @@ class PerformTableAction(graphene.Mutation):
         transaction.on_commit(
             lambda: calculate_column_stats_for_action.delay(action_obj.id)
         )
-        return PerformTableAction(result=action_obj.id, errors=None, ok=True)
+        return PerformTableAction(result=table, errors=None, ok=True)
 
 
 class TableJoinMutation(graphene.Mutation):
