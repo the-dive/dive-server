@@ -12,6 +12,7 @@ from .validators import (
     validate_table_properties,
     get_default_table_properties,
     validate_join_clauses,
+    validate_table_preview,
 )
 
 
@@ -51,7 +52,7 @@ class Table(BaseModel, NamedModelMixin):
         default=get_default_table_properties,
         validators=[validate_table_properties],
     )
-    preview_data = models.JSONField(blank=True, null=True)
+    preview_data = models.JSONField(blank=True, null=True, validators=[validate_table_preview])
     is_added_to_workspace = models.BooleanField(default=False)
     has_errored = models.BooleanField(default=False)
     error = models.TextField(null=True, blank=True)
@@ -72,6 +73,7 @@ class Table(BaseModel, NamedModelMixin):
         return self.name or self.original_name
 
     def clone(self):
+        self.full_clean()
         cloned_table = copy.deepcopy(self)
         cloned_table.pk = None
         cloned_table.cloned_from = self
