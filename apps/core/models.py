@@ -52,7 +52,9 @@ class Table(BaseModel, NamedModelMixin):
         default=get_default_table_properties,
         validators=[validate_table_properties],
     )
-    preview_data = models.JSONField(blank=True, null=True, validators=[validate_table_preview])
+    preview_data = models.JSONField(
+        blank=True, null=True, validators=[validate_table_preview]
+    )
     is_added_to_workspace = models.BooleanField(default=False)
     has_errored = models.BooleanField(default=False)
     error = models.TextField(null=True, blank=True)

@@ -2,6 +2,7 @@ from typing import Any
 
 from django.db import transaction
 import graphene
+from graphene.types.generic import GenericScalar
 from graphene_file_upload.scalars import Upload
 
 from utils.graphene.error_types import (
@@ -13,11 +14,12 @@ from utils.graphene.mutation import (
     DiveMutationMixin,
 )
 
+from dive.consts import JOIN_CLAUSE_OPERATIONS
 from apps.core.schema import DatasetType, TableType
 from apps.core.actions.base import get_all_action_names
 from apps.core.actions.utils import parse_raw_action
 from apps.file.serializers import FileSerializer, File
-from apps.core.utils import create_dataset_and_tables
+from apps.core.utils import create_dataset_and_tables, perform_hash_join_
 
 from utils.decorators import lift_mutate_with_instance
 from .serializers import TablePropertiesSerializer, TableJoinSeralizer
@@ -33,6 +35,16 @@ TablePropertiesInputType = generate_input_type_for_serializer(
 TableJoinInputType = generate_input_type_for_serializer(
     "TableJoinInputType", TableJoinSeralizer
 )
+
+
+class ColumnType(graphene.ObjectType):
+    key = graphene.String()
+    label = graphene.String()
+
+
+class RowsColumnsType(graphene.ObjectType):
+    rows = graphene.List(GenericScalar)
+    columns = graphene.List(ColumnType)
 
 
 class CreateDatasetInputType(graphene.InputObjectType):
@@ -213,11 +225,11 @@ class TableJoinMutation(graphene.Mutation):
     def mutate(table, root, info, id, data: Any):
         target_table = data["target_table"]
         join_type = data["join_type"]
-        clauses = data.get("clauses")
+        clauses = data["clauses"]
 
         # create Join
         join = Join.objects.create(
-            source_table=Table.objects.filter(id=id).first(),
+            source_table=table,
             target_table=Table.objects.filter(id=target_table).first(),
             join_type=join_type,
             clauses=clauses,
@@ -239,6 +251,58 @@ class TableJoinMutation(graphene.Mutation):
         return TableJoinMutation(result=joined_table, errors=None, ok=True)
 
 
+class JoinPreviewMutation(graphene.Mutation):
+    class Arguments:
+        data = TableJoinInputType(required=True)
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(RowsColumnsType)
+
+    @staticmethod
+    @lift_mutate_with_instance(Table)
+    def mutate(source_table, root, info, id, data: Any):
+        target_table_id = data["target_table"]
+        join_type = data["join_type"]
+        clauses = data["clauses"]
+        target_table = Table.objects.get(id=target_table_id)
+
+        is_join_with_equi_clause = (
+            len(clauses) == 1
+            and clauses[0]["operation"] == JOIN_CLAUSE_OPERATIONS.EQUAL
+        )
+        if is_join_with_equi_clause:
+            new_cols, new_rows, _ = perform_hash_join_(
+                clause=clauses[0],
+                source_cols=source_table.preview_data["columns"],
+                target_cols=target_table.preview_data["columns"],
+                source_rows=source_table.preview_data["rows"],
+                target_rows=target_table.preview_data["rows"],
+                source_stats=[],
+                target_stats=[],
+                join_type=join_type,
+                conflicting_col_suffix=str(target_table.id),
+            )
+        else:
+            return DiveMutationMixin(
+                errors=[
+                    dict(
+                        field="nonFieldErrors",
+                        messages=(
+                            "This clause is not supported at the moment."
+                            " Please use single inner join with equality clause."
+                        ),
+                    )
+                ]
+            )
+        result = {
+            "rows": new_rows,
+            "columns": new_cols,
+        }
+        return JoinPreviewMutation(result=result, errors=None, ok=True)
+
+
 class Mutation:
     create_dataset = CreateDataset.Field()
     add_table_to_workspace = AddTableToWorkSpace.Field()
@@ -248,3 +312,4 @@ class Mutation:
     rename_table = RenameTable.Field()
     table_action = PerformTableAction.Field()
     table_join = TableJoinMutation.Field()
+    join_preview = JoinPreviewMutation.Field()
