@@ -5,15 +5,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0009_remove_dataset_extra_data_remove_table_extra_data'),
+        ("core", "0009_remove_dataset_extra_data_remove_table_extra_data"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='table',
-            name='preview_data',
-            field=models.JSONField(blank=True, null=True, validators=[apps.core.validators.validate_table_preview]),
+            model_name="table",
+            name="preview_data",
+            field=models.JSONField(
+                blank=True,
+                null=True,
+                validators=[apps.core.validators.validate_table_preview],
+            ),
         ),
     ]

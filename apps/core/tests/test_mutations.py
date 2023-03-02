@@ -20,6 +20,7 @@ from apps.core.tasks import create_snapshot_for_table
 from apps.core.factories import DatasetFactory, TableFactory
 from dive.consts import JOIN_CLAUSE_OPERATIONS
 from dive.base_test import create_test_file
+from .test_tasks import get_dummy_source_data, get_dummy_target_data, _test_expectation
 
 
 _pd_excel = pd.ExcelFile(TEST_FILE_PATH)
@@ -361,3 +362,64 @@ class TestTableJoinMutation(GraphQLTestCase, BaseTestWithDataFrameAndExcel, Test
         content = resp_data["data"]["tableJoin"]
         assert content["ok"] is True
         table_join_delay_func.assert_called_with(int(content["result"]["id"]))
+
+    def test_table_join_preview(self):
+        # Set preview data
+        preview_mutation = """
+            mutation Mutation($tableId: ID! $data: TableJoinInputType!) {
+                joinPreview(id: $tableId, data: $data) {
+                    ok
+                    errors
+                    result {
+                        rows
+                        columns {
+                            key
+                            label
+                        }
+                    }
+                }
+            }
+        """
+        src_cols, _, src_rows = get_dummy_source_data()
+        tgt_cols, _, tgt_rows = get_dummy_target_data()
+        self.source_table.preview_data = {
+            "columns": src_cols,
+            "rows": src_rows,
+        }
+        self.target_table.preview_data = {
+            "columns": tgt_cols,
+            "rows": tgt_rows,
+        }
+        self.source_table.save()
+        self.target_table.save()
+
+        variables = {
+            "tableId": self.source_table.id,
+            "data": {
+                "targetTable": self.target_table.id,
+                "joinType": self.genum(Join.JoinType.INNER_JOIN),
+                "clauses": json.dumps(
+                    [
+                        {
+                            "source_column": "id",
+                            "target_column": "id",
+                            "operation": JOIN_CLAUSE_OPERATIONS.EQUAL,
+                        }
+                    ]
+                ),
+            },
+        }
+
+        resp_data = self.query_check(
+            preview_mutation,
+            variables=variables,
+        )
+        data = resp_data["data"]["joinPreview"]["result"]
+        _test_expectation(
+            data["columns"],
+            data["rows"],
+            [],  # No stats for preview
+            str(self.target_table.id),
+            [],  # No source stats for preview
+            [],  # No target stats for preview
+        )

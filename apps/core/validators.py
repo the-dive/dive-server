@@ -38,26 +38,17 @@ table_properties_schema = {
 
 
 def array_of(schema):
-    return {
-        "type": "array",
-        "items": schema
-    }
+    return {"type": "array", "items": schema}
 
 
 column_schema = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "key": {
-            "type": "string"
-        },
-        "label": {
-            "type": "string"
-        },
-        "type": {
-            "type": "string"
-        },
-    }
+        "key": {"type": "string"},
+        "label": {"type": "string"},
+        "type": {"type": "string"},
+    },
 }
 
 
@@ -68,9 +59,11 @@ table_preview_schema = {
         "additionalProperties": False,
         "properties": {
             "columns": array_of(column_schema),
-            "rows": array_of({
-                "type": "object",
-            })
+            "rows": array_of(
+                {
+                    "type": "object",
+                }
+            ),
         },
         "required": ["columns", "rows"],
     },
