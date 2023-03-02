@@ -26,6 +26,7 @@ from .serializers import TablePropertiesSerializer, TableJoinSeralizer
 from .models import Table, Action, Join
 from .utils import apply_table_properties_and_extract_preview
 from .tasks import extract_table_data, calculate_column_stats_for_action, perform_join
+from .schema import KeyLabelType
 
 
 TablePropertiesInputType = generate_input_type_for_serializer(
@@ -37,14 +38,9 @@ TableJoinInputType = generate_input_type_for_serializer(
 )
 
 
-class ColumnType(graphene.ObjectType):
-    key = graphene.String()
-    label = graphene.String()
-
-
 class RowsColumnsType(graphene.ObjectType):
     rows = graphene.List(GenericScalar)
-    columns = graphene.List(ColumnType)
+    columns = graphene.List(KeyLabelType)
 
 
 class CreateDatasetInputType(graphene.InputObjectType):
@@ -274,13 +270,9 @@ class JoinPreviewMutation(graphene.Mutation):
         )
         if is_join_with_equi_clause:
             new_cols, new_rows, _ = perform_hash_join_(
-                clause=clauses[0],
-                source_cols=source_table.preview_data["columns"],
-                target_cols=target_table.preview_data["columns"],
-                source_rows=source_table.preview_data["rows"],
-                target_rows=target_table.preview_data["rows"],
-                source_stats=[],
-                target_stats=[],
+                clauses[0],
+                source_table.preview_data,
+                target_table.preview_data,
                 join_type=join_type,
                 conflicting_col_suffix=str(target_table.id),
             )

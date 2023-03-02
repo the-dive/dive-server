@@ -67,12 +67,12 @@ class TestJoinTasks(TestCase):
             self.source_columns,
             self.source_stats,
             self.source_rows,
-        ) = get_dummy_source_data()
+        ) = DummyJoinData.get_dummy_source_data()
         (
             self.target_columns,
             self.target_stats,
             self.target_rows,
-        ) = get_dummy_target_data()
+        ) = DummyJoinData.get_dummy_target_data()
         self.clause = {
             "source_column": "id",
             "target_column": "id",
@@ -146,7 +146,7 @@ class TestJoinTasks(TestCase):
         assert (
             joined_snapshot is not None
         ), "There must be snapshot after join operation"
-        _test_expectation(
+        DummyJoinData.test_join_expectation(
             joined_snapshot.data_columns,
             joined_snapshot.data_rows,
             joined_snapshot.column_stats,
@@ -159,16 +159,20 @@ class TestJoinTasks(TestCase):
         suffix = "_joined"
         new_cols, new_rows, new_stats = perform_hash_join_(
             self.clause,
-            self.source_columns,
-            self.target_columns,
-            self.source_rows,
-            self.target_rows,
-            self.source_stats,
-            self.target_stats,
+            dict(
+                columns=self.source_columns,
+                rows=self.source_rows,
+                stats=self.source_stats,
+            ),
+            dict(
+                columns=self.target_columns,
+                rows=self.target_rows,
+                stats=self.target_stats,
+            ),
             join_type=Join.JoinType.INNER_JOIN,
             conflicting_col_suffix=suffix,
         )
-        _test_expectation(
+        DummyJoinData.test_join_expectation(
             new_cols,
             new_rows,
             new_stats,
@@ -178,128 +182,178 @@ class TestJoinTasks(TestCase):
         )
 
 
-def _test_expectation(
-    new_cols: List,
-    new_rows: List,
-    new_stats: List,
-    suffix: str,
-    source_stats: list,
-    target_stats: list,
-):
-    # There are 3 cols in source table and 3 in target table
-    assert len(new_cols) == 6, "There must be total of 6 columns"
-    new_keys = [x["key"] for x in new_cols]
-    expected_keys = ["name", "id", "address", "id" + suffix, "color", "color_code"]
-    assert new_keys == expected_keys, "id is redundant so named as id_joined"
+class DummyJoinData:
+    @staticmethod
+    def get_dummy_source_data():
+        src_col1 = {
+            "key": "name",
+            "label": "Name",
+            "type": ColumnTypes.STRING,
+        }
+        src_col2 = {
+            "key": "id",
+            "label": "Id",
+            "type": ColumnTypes.INTEGER,
+        }
+        src_col3 = {
+            "key": "address",
+            "label": "Address",
+            "type": ColumnTypes.STRING,
+        }
+        # Set some dummy stats, these don't need to be exact stats because
+        col1_stats = {
+            **src_col1,
+            "total_counts": 10,
+            "na_counts": 3,
+        }
+        col2_stats = {
+            **src_col2,
+            "total_counts": 10,
+            "na_counts": 0,
+            "mean": 10.1,
+        }
+        col3_stats = {
+            **src_col3,
+            "total_counts": 10,
+            "na_counts": 2,
+            "max_length": 10,
+        }
+        columns = [src_col1, src_col2, src_col3]
+        stats = [col1_stats, col2_stats, col3_stats]
+        rows = [
+            {"name": "Bibek", "id": 1, "address": "Chitwan"},
+            {"name": "Rishi", "id": 2, "address": "Chitwan"},
+            {"name": "Sameer", "id": 3, "address": "Paanchthar"},
+            {"name": "Shreeyash", "id": 4, "address": "Bhaktapur"},
+        ]
 
-    # If we look at the rows, there are 5 rows matching the join conditions
-    assert len(new_rows) == 5
+        return columns, stats, rows
 
-    all_stats = [*source_stats, *target_stats]
-    assert len(new_stats) == len(all_stats)
+    @staticmethod
+    def get_dummy_target_data():
+        tgt_col1 = {
+            "key": "id",
+            "label": "Id",
+            "type": ColumnTypes.INTEGER,
+        }
+        tgt_col2 = {
+            "key": "color",
+            "label": "Color",
+            "type": ColumnTypes.STRING,
+        }
+        tgt_col3 = {
+            "key": "color_code",
+            "label": "Color code",
+            "type": ColumnTypes.STRING,
+        }
+        # Set some dummy stats, these don't need to be exact stats because
+        col1_stats = {
+            **tgt_col1,
+            "total_counts": 10,
+            "na_counts": 3,
+        }
+        col2_stats = {
+            **tgt_col2,
+            "total_counts": 10,
+            "na_counts": 0,
+            "mean": 10.1,
+        }
+        col3_stats = {
+            **tgt_col3,
+            "total_counts": 10,
+            "na_counts": 2,
+            "max_length": 10,
+        }
 
-    for i, stat in enumerate(new_stats):
-        if i != 3:
-            # Means source table stats and non-conflicting target keys
-            # which are not changed
-            assert stat == all_stats[i]
-        else:
-            # Means joined target id column
-            # Pop the key and compare them
-            # The rest fields should be the same
-            assert stat.pop("key") == all_stats[i].pop("key") + suffix
-            assert stat == all_stats[i]
+        columns = [tgt_col1, tgt_col2, tgt_col3]
+        stats = [col1_stats, col2_stats, col3_stats]
+        rows = [
+            {"id": 5, "color": "Blue", "color_code": "blue"},
+            {"id": 1, "color": "Blue", "color_code": "blue"},
+            {"id": 3, "color": "Red", "color_code": "red"},
+            {"id": 3, "color": "Pink", "color_code": "pink"},
+            {"id": 4, "color": "Green", "color_code": "green"},
+            {"id": 4, "color": "Orange", "color_code": "orange"},
+        ]
+        return columns, stats, rows
 
+    @staticmethod
+    def get_expected_col_keys(suffix):
+        return ["name", "id", "address", "id" + suffix, "color", "color_code"]
 
-def get_dummy_source_data():
-    src_col1 = {
-        "key": "name",
-        "label": "Name",
-        "type": ColumnTypes.STRING,
-    }
-    src_col2 = {
-        "key": "id",
-        "label": "Id",
-        "type": ColumnTypes.INTEGER,
-    }
-    src_col3 = {
-        "key": "address",
-        "label": "Address",
-        "type": ColumnTypes.STRING,
-    }
-    # Set some dummy stats, these don't need to be exact stats because
-    col1_stats = {
-        **src_col1,
-        "total_counts": 10,
-        "na_counts": 3,
-    }
-    col2_stats = {
-        **src_col2,
-        "total_counts": 10,
-        "na_counts": 0,
-        "mean": 10.1,
-    }
-    col3_stats = {
-        **src_col3,
-        "total_counts": 10,
-        "na_counts": 2,
-        "max_length": 10,
-    }
-    columns = [src_col1, src_col2, src_col3]
-    stats = [col1_stats, col2_stats, col3_stats]
-    rows = [
-        {"name": "Bibek", "id": 1, "address": "Chitwan"},
-        {"name": "Rishi", "id": 2, "address": "Chitwan"},
-        {"name": "Sameer", "id": 3, "address": "Paanchthar"},
-        {"name": "Shreeyash", "id": 4, "address": "Bhaktapur"},
-    ]
+    @staticmethod
+    def get_expected_rows():
+        return [
+            {
+                "name": "Bibek",
+                "id": 1,
+                "address": "Chitwan",
+                "id_joined": 1,
+                "color": "Blue",
+                "color_code": "blue",
+            },
+            {
+                "name": "Sameer",
+                "id": 3,
+                "address": "Paanchthar",
+                "id_joined": 3,
+                "color": "Red",
+                "color_code": "red",
+            },
+            {
+                "name": "Sameer",
+                "id": 3,
+                "address": "Paanchthar",
+                "id_joined": 3,
+                "color": "Pink",
+                "color_code": "pink",
+            },
+            {
+                "name": "Shreeyash",
+                "id": 4,
+                "address": "Bhaktapur",
+                "id_joined": 4,
+                "color": "Green",
+                "color_code": "green",
+            },
+            {
+                "name": "Shreeyash",
+                "id": 4,
+                "address": "Bhaktapur",
+                "id_joined": 4,
+                "color": "Orange",
+                "color_code": "orange",
+            },
+        ]
 
-    return columns, stats, rows
+    @staticmethod
+    def test_join_expectation(
+        new_cols: List,
+        new_rows: List,
+        new_stats: List,
+        suffix: str,
+        source_stats: list,
+        target_stats: list,
+    ):
+        expected_keys = DummyJoinData.get_expected_col_keys(suffix)
+        assert len(new_cols) == len(expected_keys)
+        new_keys = [x["key"] for x in new_cols]
+        assert new_keys == expected_keys
 
+        # If we look at the rows, there are 5 rows matching the join conditions
+        assert len(new_rows) == len(DummyJoinData.get_expected_rows())
 
-def get_dummy_target_data():
-    tgt_col1 = {
-        "key": "id",
-        "label": "Id",
-        "type": ColumnTypes.INTEGER,
-    }
-    tgt_col2 = {
-        "key": "color",
-        "label": "Color",
-        "type": ColumnTypes.STRING,
-    }
-    tgt_col3 = {
-        "key": "color_code",
-        "label": "Color code",
-        "type": ColumnTypes.STRING,
-    }
-    # Set some dummy stats, these don't need to be exact stats because
-    col1_stats = {
-        **tgt_col1,
-        "total_counts": 10,
-        "na_counts": 3,
-    }
-    col2_stats = {
-        **tgt_col2,
-        "total_counts": 10,
-        "na_counts": 0,
-        "mean": 10.1,
-    }
-    col3_stats = {
-        **tgt_col3,
-        "total_counts": 10,
-        "na_counts": 2,
-        "max_length": 10,
-    }
+        all_stats = [*source_stats, *target_stats]
+        assert len(new_stats) == len(all_stats)
 
-    columns = [tgt_col1, tgt_col2, tgt_col3]
-    stats = [col1_stats, col2_stats, col3_stats]
-    rows = [
-        {"id": 5, "color": "Blue", "color_code": "blue"},
-        {"id": 1, "color": "Blue", "color_code": "blue"},
-        {"id": 3, "color": "Red", "color_code": "red"},
-        {"id": 3, "color": "Pink", "color_code": "pink"},
-        {"id": 4, "color": "Green", "color_code": "green"},
-        {"id": 4, "color": "Orange", "color_code": "orange"},
-    ]
-    return columns, stats, rows
+        for i, stat in enumerate(new_stats):
+            if i != 3:
+                # Means source table stats and non-conflicting target keys
+                # which are not changed
+                assert stat == all_stats[i]
+            else:
+                # Means joined target id column
+                # Pop the key and compare them
+                # The rest fields should be the same
+                assert stat.pop("key") == all_stats[i].pop("key") + suffix
+                assert stat == all_stats[i]

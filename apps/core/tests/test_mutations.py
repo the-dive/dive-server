@@ -20,7 +20,7 @@ from apps.core.tasks import create_snapshot_for_table
 from apps.core.factories import DatasetFactory, TableFactory
 from dive.consts import JOIN_CLAUSE_OPERATIONS
 from dive.base_test import create_test_file
-from .test_tasks import get_dummy_source_data, get_dummy_target_data, _test_expectation
+from .test_tasks import DummyJoinData
 
 
 _pd_excel = pd.ExcelFile(TEST_FILE_PATH)
@@ -375,8 +375,8 @@ class TestTableJoinMutation(GraphQLTestCase, BaseTestWithDataFrameAndExcel, Test
                 }
             }
         """
-        src_cols, _, src_rows = get_dummy_source_data()
-        tgt_cols, _, tgt_rows = get_dummy_target_data()
+        src_cols, _, src_rows = DummyJoinData.get_dummy_source_data()
+        tgt_cols, _, tgt_rows = DummyJoinData.get_dummy_target_data()
         self.source_table.preview_data = {
             "columns": src_cols,
             "rows": src_rows,
@@ -410,7 +410,7 @@ class TestTableJoinMutation(GraphQLTestCase, BaseTestWithDataFrameAndExcel, Test
             variables=variables,
         )
         data = resp_data["data"]["joinPreview"]["result"]
-        _test_expectation(
+        DummyJoinData.test_join_expectation(
             data["columns"],
             data["rows"],
             [],  # No stats for preview

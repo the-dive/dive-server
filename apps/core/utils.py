@@ -104,14 +104,20 @@ def perform_hash_join(joined_table: Table) -> Snapshot:
     leave the overlapping source column key as it is and only
     modify keys for target, for which we will just append _<table_id>.
     """
+    source_data = dict(
+        columns=source_table.data_columns,
+        rows=source_table.data_rows,
+        stats=source_table.data_column_stats,
+    )
+    target_data = dict(
+        columns=target_table.data_columns,
+        rows=target_table.data_rows,
+        stats=target_table.data_column_stats,
+    )
     new_cols, new_rows, new_stats = perform_hash_join_(
-        clause=clause,
-        source_cols=source_table.data_columns,
-        target_cols=target_table.data_columns,
-        source_rows=source_table.data_rows,
-        target_rows=target_table.data_rows,
-        source_stats=source_table.data_column_stats,
-        target_stats=target_table.data_column_stats,
+        clause,
+        source_data,
+        target_data,
         join_type=join_obj.join_type,
         conflicting_col_suffix=str(target_table.id),
     )
@@ -127,12 +133,8 @@ def perform_hash_join(joined_table: Table) -> Snapshot:
 
 def perform_hash_join_(
     clause,
-    source_cols,
-    target_cols,
-    source_rows,
-    target_rows,
-    source_stats,
-    target_stats,
+    source_data,
+    target_data,
     join_type,
     conflicting_col_suffix="_1",
 ) -> Tuple[List, List, List]:
@@ -140,6 +142,17 @@ def perform_hash_join_(
     target_col = clause["target_column"]
     # TODO: implement other joins
     assert join_type == Join.JoinType.INNER_JOIN, "Only inner join is supported"
+
+    source_cols, source_rows, source_stats = (
+        source_data["columns"],
+        source_data["rows"],
+        source_data.get("stats") or [],  # Stats may not be present for preview data
+    )
+    target_cols, target_rows, target_stats = (
+        target_data["columns"],
+        target_data["rows"],
+        target_data.get("stats") or [],  # Stats may not be present for preview data
+    )
 
     # First create index on target columns which has the following structure
     # { value: [row_index1, row_index2] }
