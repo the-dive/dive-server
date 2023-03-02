@@ -36,6 +36,46 @@ table_properties_schema = {
     "required": ["headerLevel", "timezone", "language", "trimWhitespaces"],
 }
 
+
+def array_of(schema):
+    return {
+        "type": "array",
+        "items": schema
+    }
+
+
+column_schema = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "key": {
+            "type": "string"
+        },
+        "label": {
+            "type": "string"
+        },
+        "type": {
+            "type": "string"
+        },
+    }
+}
+
+
+table_preview_schema = {
+    "schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "items": {
+        "additionalProperties": False,
+        "properties": {
+            "columns": array_of(column_schema),
+            "rows": array_of({
+                "type": "object",
+            })
+        },
+        "required": ["columns", "rows"],
+    },
+}
+
 join_clause_schema = {
     "schema": "http://json-schema.org/draft-07/schema#",
     "type": "array",
@@ -69,11 +109,15 @@ def get_default_table_properties() -> TablePropertiesDict:
 
 
 def validate_table_properties(properties: dict):
-    validate_with_schema(table_properties_schema)(properties)
+    return validate_with_schema(table_properties_schema)(properties)
 
 
 def validate_join_clauses(clauses: list):
-    validate_with_schema(join_clause_schema)(clauses)
+    return validate_with_schema(join_clause_schema)(clauses)
+
+
+def validate_table_preview(data: dict):
+    return validate_with_schema(table_preview_schema)(data)
 
 
 def validate_with_schema(schema: Any):
