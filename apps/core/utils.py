@@ -182,7 +182,13 @@ def perform_hash_join_(
     new_stats = source_stats + updated_target_stats
 
     def merge(source_row, target_row):
-        new_target_row = {target_col_key_map[k]: v for k, v in target_row.items()}
+        new_target_row = {
+            target_col_key_map[k]: v
+            for k, v in target_row.items()
+            # Omit the original key from target row, later we'll have new key
+            # for each row
+            if k != "key"
+        }
         return {**source_row, **new_target_row}
 
     # Now iterate over source rows and perform join
@@ -190,9 +196,11 @@ def perform_hash_join_(
     for row in source_rows:
         source_val = row[source_col]
         target_row_indices = target_index.get(source_val) or []
-        for target_ind in target_row_indices:
+        for i, target_ind in enumerate(target_row_indices):
             joined_row = merge(row, target_rows[target_ind])
-            joined_rows.append(joined_row)
+            joined_rows.append(
+                {"key": str(i), **joined_row}  # Each row must have a key attribute
+            )
     return new_columns, joined_rows, new_stats
 
 

@@ -231,15 +231,19 @@ class TableJoinMutation(graphene.Mutation):
             clauses=clauses,
         )
 
-        # create table from the joined
-
+        # Create table from the joined
         joined_original_name = (
             join.source_table.name + " : " + "JOIN" + " : " + join.target_table.name
         )
         joined_table = Table.objects.create(
+            # NOTE: what should be the dataset of the joined table?
+            # It is not completely sure yet what the dataset should
+            # be. For now we just keep the source table's dataset
+            dataset=join.source_table.dataset,
             name=joined_original_name,
             original_name=joined_original_name,
             joined_from=join,
+            is_added_to_workspace=join.source_table.is_added_to_workspace,
         )
 
         # call background task to perform join
