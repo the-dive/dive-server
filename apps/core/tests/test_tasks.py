@@ -221,10 +221,10 @@ class DummyJoinData:
         columns = [src_col1, src_col2, src_col3]
         stats = [col1_stats, col2_stats, col3_stats]
         rows = [
-            {"name": "Bibek", "id": 1, "address": "Chitwan"},
-            {"name": "Rishi", "id": 2, "address": "Chitwan"},
-            {"name": "Sameer", "id": 3, "address": "Paanchthar"},
-            {"name": "Shreeyash", "id": 4, "address": "Bhaktapur"},
+            {"key": "0", "name": "Bibek", "id": 1, "address": "Chitwan"},
+            {"key": "1", "name": "Rishi", "id": 2, "address": "Chitwan"},
+            {"key": "2", "name": "Sameer", "id": 3, "address": "Paanchthar"},
+            {"key": "3", "name": "Shreeyash", "id": 4, "address": "Bhaktapur"},
         ]
 
         return columns, stats, rows
@@ -268,12 +268,12 @@ class DummyJoinData:
         columns = [tgt_col1, tgt_col2, tgt_col3]
         stats = [col1_stats, col2_stats, col3_stats]
         rows = [
-            {"id": 5, "color": "Blue", "color_code": "blue"},
-            {"id": 1, "color": "Blue", "color_code": "blue"},
-            {"id": 3, "color": "Red", "color_code": "red"},
-            {"id": 3, "color": "Pink", "color_code": "pink"},
-            {"id": 4, "color": "Green", "color_code": "green"},
-            {"id": 4, "color": "Orange", "color_code": "orange"},
+            {"key": "0", "id": 5, "color": "Blue", "color_code": "blue"},
+            {"key": "1", "id": 1, "color": "Blue", "color_code": "blue"},
+            {"key": "2", "id": 3, "color": "Red", "color_code": "red"},
+            {"key": "3", "id": 3, "color": "Pink", "color_code": "pink"},
+            {"key": "4", "id": 4, "color": "Green", "color_code": "green"},
+            {"key": "5", "id": 4, "color": "Orange", "color_code": "orange"},
         ]
         return columns, stats, rows
 
@@ -285,6 +285,7 @@ class DummyJoinData:
     def get_expected_rows():
         return [
             {
+                "key": "0",
                 "name": "Bibek",
                 "id": 1,
                 "address": "Chitwan",
@@ -293,6 +294,7 @@ class DummyJoinData:
                 "color_code": "blue",
             },
             {
+                "key": "1",
                 "name": "Sameer",
                 "id": 3,
                 "address": "Paanchthar",
@@ -301,6 +303,7 @@ class DummyJoinData:
                 "color_code": "red",
             },
             {
+                "key": "2",
                 "name": "Sameer",
                 "id": 3,
                 "address": "Paanchthar",
@@ -309,6 +312,7 @@ class DummyJoinData:
                 "color_code": "pink",
             },
             {
+                "key": "3",
                 "name": "Shreeyash",
                 "id": 4,
                 "address": "Bhaktapur",
@@ -317,6 +321,7 @@ class DummyJoinData:
                 "color_code": "green",
             },
             {
+                "key": "4",
                 "name": "Shreeyash",
                 "id": 4,
                 "address": "Bhaktapur",
@@ -345,6 +350,10 @@ class DummyJoinData:
 
         all_stats = [*source_stats, *target_stats]
         assert len(new_stats) == len(all_stats)
+
+        # check if key exists in new rows
+        for row in new_rows:
+            assert "key" in row
 
         for i, stat in enumerate(new_stats):
             if i != 3:

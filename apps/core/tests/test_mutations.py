@@ -333,8 +333,15 @@ class TestTableJoinMutation(GraphQLTestCase, BaseTestWithDataFrameAndExcel, Test
                 }
             }
         """
-        self.source_table = TableFactory.create(name="Source Table")
-        self.target_table = TableFactory.create(name="Target Table")
+        # Source and target table must be added to the workspace
+        self.source_table = TableFactory.create(
+            name="Source Table",
+            is_added_to_workspace=True,
+        )
+        self.target_table = TableFactory.create(
+            name="Target Table",
+            is_added_to_workspace=True,
+        )
         self.variables = {
             "tableId": self.source_table.id,
             "data": {
@@ -362,6 +369,16 @@ class TestTableJoinMutation(GraphQLTestCase, BaseTestWithDataFrameAndExcel, Test
         content = resp_data["data"]["tableJoin"]
         assert content["ok"] is True
         table_join_delay_func.assert_called_with(int(content["result"]["id"]))
+        join_object = Join.objects.get(
+            source_table=self.source_table, target_table=self.target_table
+        )
+        joined_table = Table.objects.filter(joined_from=join_object).first()
+        assert joined_table is not None
+        assert joined_table.dataset == self.source_table.dataset
+        assert (
+            joined_table.is_added_to_workspace
+            == self.source_table.is_added_to_workspace
+        )
 
     def test_table_join_preview(self):
         # Set preview data
