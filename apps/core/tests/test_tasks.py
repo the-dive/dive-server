@@ -153,7 +153,9 @@ class TestJoinTasks(TestCase):
         perform_join(new_table.id)
 
         new_table.refresh_from_db()
-        assert new_table.preview_data is not None, "Preview data should have been created"
+        assert (
+            new_table.preview_data is not None
+        ), "Preview data should have been created"
 
         # Check for snapshot and data
         joined_snapshot = Snapshot.objects.filter(table=new_table).first()

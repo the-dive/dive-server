@@ -81,6 +81,15 @@ class Table(BaseModel, NamedModelMixin):
         cloned_table.cloned_from = self
         cloned_table.name = f"Copy of {self.name}"
         cloned_table.save()
+
+        # Create snapshot
+        # NOTE: This might be a time consuming task. May need to send to background
+        snapshot = self.last_snapshot
+        if snapshot is None:
+            return cloned_table
+        snapshot.id = None
+        snapshot.table = cloned_table
+        snapshot.save()
         return cloned_table
 
     @property

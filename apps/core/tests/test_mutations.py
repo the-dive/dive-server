@@ -15,9 +15,9 @@ from dive.base_test import (
     TEST_FILE_PATH,
     BaseTestWithDataFrameAndExcel,
 )
-from apps.core.models import Dataset, Table, Action, Join
+from apps.core.models import Dataset, Table, Action, Join, Snapshot
 from apps.core.tasks import create_snapshot_for_table
-from apps.core.factories import DatasetFactory, TableFactory
+from apps.core.factories import DatasetFactory, TableFactory, SnapshotFactory
 from dive.consts import JOIN_CLAUSE_OPERATIONS
 from dive.base_test import create_test_file
 from .test_tasks import DummyJoinData
@@ -167,6 +167,12 @@ class TestTableMutation(GraphQLTestCase):
             dataset=dataset,
             is_added_to_workspace=True,
         )
+        # Create snapshot for table, values can be empty. We are just trying to
+        # check if snapshot is created for cloned table or not
+        SnapshotFactory.create(
+            version=1, table=table, data_columns=[], data_rows=[], column_stats=[]
+        )
+
         query = """
             mutation Mutation($id: ID!) {
                 cloneTable(id: $id) {
@@ -192,6 +198,13 @@ class TestTableMutation(GraphQLTestCase):
         assert content["ok"] is True
         self.assertEqual(content["result"]["clonedFrom"]["name"], table.name)
         self.assertEqual(content["result"]["clonedFrom"]["id"], str(table.id))
+
+        cloned_table = Table.objects.filter(cloned_from=table).first()
+        assert cloned_table is not None
+        cloned_snapshot = Snapshot.objects.filter(table=cloned_table).first()
+        assert (
+            cloned_snapshot is not None
+        ), "Snapshot should be created for cloned table"
 
     @mock.patch("apps.core.mutations.apply_table_properties_and_extract_preview")
     def test_update_table_properties(self, apply_table_properties_func):
