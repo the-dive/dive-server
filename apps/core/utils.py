@@ -122,13 +122,27 @@ def perform_hash_join(joined_table: Table) -> Snapshot:
         conflicting_col_suffix=str(target_table.id),
     )
     # Create a snapshot
-    return Snapshot.objects.create(
+    snapshot = Snapshot.objects.create(
         table=joined_table,
         version=1,
         data_rows=new_rows,
         data_columns=new_cols,
         column_stats=new_stats,
     )
+    # Create preview data
+    new_cols, new_rows, _ = perform_hash_join_(
+        clause,
+        join_obj.source_table.preview_data,
+        join_obj.target_table.preview_data,
+        join_type=join_obj.join_type,
+        conflicting_col_suffix=str(join_obj.target_table.id),
+    )
+    joined_table.preview_data = {
+        "columns": new_cols,
+        "rows": new_rows,
+    }
+    joined_table.save()
+    return snapshot
 
 
 def perform_hash_join_(
