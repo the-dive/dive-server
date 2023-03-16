@@ -111,7 +111,18 @@ class TestJoinTasks(TestCase):
     def test_join_task(self):
         dataset = DatasetFactory.create()
         [source_table, target_table] = TableFactory.create_batch(2, dataset=dataset)
-        # Create snapshots
+
+        # Set preview data
+        source_table.preview_data = {
+            "rows": self.source_rows,
+            "columns": self.source_columns,
+        }
+        target_table.preview_data = {
+            "rows": self.target_rows,
+            "columns": self.target_columns,
+        }
+        source_table.save()
+        target_table.save()
 
         # Create source and target table snapshots
         SnapshotFactory.create(
@@ -140,6 +151,9 @@ class TestJoinTasks(TestCase):
             Snapshot.objects.filter(table=new_table).first() is None
         ), "There must be no snapshot"
         perform_join(new_table.id)
+
+        new_table.refresh_from_db()
+        assert new_table.preview_data is not None, "Preview data should have been created"
 
         # Check for snapshot and data
         joined_snapshot = Snapshot.objects.filter(table=new_table).first()
