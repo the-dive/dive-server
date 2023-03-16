@@ -129,7 +129,14 @@ def perform_hash_join(joined_table: Table) -> Snapshot:
         data_columns=new_cols,
         column_stats=new_stats,
     )
-    # Create preview data
+    # Create preview data, uses the same function but the data passed is the preview data
+    """
+    This is because, every table has a preview data(rows and columns). When
+    imported from excel or csv, preview data is automatically extracted.
+    However, when two tables are joined to create a new joined table, this also
+    needs to have preview data which is created by joining the preview data of
+    two tables.
+    """
     new_cols, new_rows, _ = perform_hash_join_(
         clause,
         join_obj.source_table.preview_data,
