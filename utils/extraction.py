@@ -156,6 +156,16 @@ def calculate_single_column_stats(items: list, coltype: ColumnTypes) -> ColumnSt
 def calculate_stats_for_numeric_col(items: list) -> ColumnStats:
     # TODO: optimize the list(use np/pd). But this should happen from the extraction phase itself
     not_null_items = [x for x in items if x is not None]
+    if not not_null_items:
+        return {
+            "min": None,
+            "max": None,
+            "mean": None,
+            "median": None,
+            "std_deviation": None,
+            "total_count": len(items),
+            "na_count": len(items) - len(not_null_items),
+        }
     return {
         "min": float_r(np.min(not_null_items)),
         "max": float_r(np.max(not_null_items)),

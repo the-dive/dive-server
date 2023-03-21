@@ -212,3 +212,26 @@ class TestCastColumnAction(BaseTestWithDataFrameAndExcel):
 
         bmi_casted = [action.apply_row(row) for row in data]
         assert bmi_casted == bmi_casted_expected
+
+    def test_cast_string_to_number_field(self):
+        """Try to cast non numeric string to integer"""
+        data = [
+            {"name": "Dive", "age": "1", "bmi": "13.5"},
+            {"name": "Deep", "age": None, "bmi": "18.0"},
+            {"name": "DEEPL", "age": "3", "bmi": "eighteen"},
+        ]
+        name_casted_expected = [
+            {"name": None, "age": "1", "bmi": "13.5"},
+            {"name": None, "age": None, "bmi": "18.0"},
+            {"name": None, "age": "3", "bmi": "eighteen"},
+        ]
+        # Test cast name
+        colkey = "name"
+        params = [colkey, "number"]
+        action = CastColumnAction(params, self.table)
+        # Set is_valid true because the constructor requires table and params
+        # to be consistent but we don't care about that for testing apply_row
+        action.is_valid = True
+
+        name_casted = [action.apply_row(row) for row in data]
+        assert name_casted == name_casted_expected
