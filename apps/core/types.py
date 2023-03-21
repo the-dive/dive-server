@@ -28,7 +28,9 @@ class ExtractedData(TypedDict):
 
 
 class NumericColumnStats(TypedDict):
-    min: Optional[float]  # Optional because if all elements are invalid, there will be no min
+    min: Optional[
+        float
+    ]  # Optional because if all elements are invalid, there will be no min
     max: Optional[float]
     mean: Optional[float]
     median: Optional[float]

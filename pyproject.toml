@@ -24,6 +24,7 @@ django-redis = "==5.0.0"
 pandas = "*"
 openpyxl = "*"
 jsonschema = "^4.17.3"
+dateparser = "^1.1.7"
 
 [tool.poetry.dev-dependencies]
 typing-extensions = "^4.3.0"

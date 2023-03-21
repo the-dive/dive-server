@@ -21,6 +21,8 @@ class CastColumnAction(BaseAction):
             ColumnTypes.NUMBER,
             ColumnTypes.INTEGER,
             ColumnTypes.STRING,
+            ColumnTypes.DATE,
+            ColumnTypes.DATETIME,
         ]:  # TODO: add other types
             return False, f"Invalid target type '{target_type}'"
         return True, None
