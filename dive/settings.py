@@ -16,6 +16,8 @@ from pathlib import Path
 import django.utils.encoding
 from django.utils.encoding import force_str
 
+from dive import sentry
+
 django.utils.encoding.force_text = force_str
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,7 +42,12 @@ env = environ.Env(
     DJANGO_MEDIA_URL=(str, "/media/"),
     DJANGO_STATIC_ROOT=(str, os.path.join(BASE_DIR, "staticfiles")),
     DJANGO_MEDIA_ROOT=(str, os.path.join(BASE_DIR, "media")),
+    DIVE_ENVIRONMENT=(str, "development"),
+    DIVE_API_FQDN=(str, "localhost"),
+    SENTRY_DSN=(str, None),
+    SENTRY_SAMPLE_RATE=(float, 0.2),
 )
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -225,3 +232,29 @@ BROKER_URL = env("CELERY_REDIS_URL")
 # CELERY_ACKS_LATE = True
 
 TEST_DIR = os.path.join(BASE_DIR, "dive/test_files")
+
+
+# Sentry Config
+DIVE_ENVIRONMENT = (env("DIVE_ENVIRONMENT"),)
+DIVE_API_FQDN = (env("DIVE_API_FQDN"),)
+SENTRY_DSN = env("SENTRY_DSN")
+SENTRY_SAMPLE_RATE = env("SENTRY_SAMPLE_RATE")
+SENTRY_ENABLED = False
+
+if SENTRY_DSN:
+    SENTRY_CONFIG = {
+        "dsn": SENTRY_DSN,
+        "send_default_pii": True,
+        "traces_sample_rate": SENTRY_SAMPLE_RATE,
+        "release": sentry.fetch_git_sha(BASE_DIR),
+        "environment": DIVE_ENVIRONMENT,
+        "debug": DEBUG,
+        "tags": {
+            "site": DIVE_API_FQDN,
+        },
+    }
+    sentry.init_sentry(
+        app_type="API",
+        **SENTRY_CONFIG,
+    )
+    SENTRY_ENABLED = True
