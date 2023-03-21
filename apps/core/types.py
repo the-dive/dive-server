@@ -28,11 +28,11 @@ class ExtractedData(TypedDict):
 
 
 class NumericColumnStats(TypedDict):
-    min: float
-    max: float
-    mean: float
-    median: float
-    std_deviation: float
+    min: Optional[float]  # Optional because if all elements are invalid, there will be no min
+    max: Optional[float]
+    mean: Optional[float]
+    median: Optional[float]
+    std_deviation: Optional[float]
     total_count: int
     na_count: int
 
@@ -41,8 +41,8 @@ class StringColumnStats(TypedDict):
     total_count: int
     na_count: int
     unique_count: int
-    max_length: int
-    min_length: int
+    max_length: Optional[int]
+    min_length: Optional[int]
 
 
 ColumnStats = Union[NumericColumnStats, StringColumnStats]
