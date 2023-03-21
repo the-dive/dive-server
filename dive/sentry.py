@@ -6,8 +6,6 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
-from django.conf import settings
-
 
 logger = logging.getLogger("sentry.errors.logging")
 
@@ -85,7 +83,6 @@ def init_sentry(app_type, tags={}, **config):
     ]
     sentry_sdk.init(
         **config,
-        traces_sample_rate=settings.SENTRY_SAMPLE_RATE,
         ignore_errors=IGNORED_ERRORS,
         integrations=integrations,
     )
