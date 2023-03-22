@@ -26,6 +26,7 @@ openpyxl = "*"
 jsonschema = "^4.17.3"
 dateparser = "^1.1.7"
 sentry-sdk = "*"
+gunicorn = "^20.1.0"
 
 [tool.poetry.dev-dependencies]
 typing-extensions = "^4.3.0"
