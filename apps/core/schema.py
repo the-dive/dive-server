@@ -17,7 +17,7 @@ from apps.core.models import (
 )
 from apps.core.filter_set import DatasetFilter, TableFilter
 from dive.consts import (
-    TABLE_HEADER_LEVELS,
+    TABLE_HEADER_ROWS,
     LANGUAGES,
     TIMEZONES,
     COLUMN_TYPES,
@@ -175,13 +175,13 @@ class TablePropertiesOptionsType(graphene.ObjectType):
     For example: table properties has following keys: headerLevel, time_zone, etc
     """
 
-    header_levels = graphene.List(KeyLabelType)
+    header_rows = graphene.List(KeyLabelType)
     languages = graphene.List(KeyLabelType)
     timezones = graphene.List(KeyLabelType)
 
-    def resolve_header_levels(self, info):
+    def resolve_header_rows(self, info):
         output = []
-        for d in TABLE_HEADER_LEVELS:
+        for d in TABLE_HEADER_ROWS:
             output.append(
                 KeyLabelType(
                     key=d["key"],

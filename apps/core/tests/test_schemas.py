@@ -1,6 +1,6 @@
 from utils.graphene.tests import GraphQLTestCase
 
-from dive.consts import LANGUAGES, TABLE_HEADER_LEVELS, COLUMN_TYPES
+from dive.consts import LANGUAGES, TABLE_HEADER_ROWS, COLUMN_TYPES
 from apps.core.factories import TableFactory, DatasetFactory
 from apps.core.models import Table
 
@@ -11,7 +11,7 @@ class GlobalPropertiesTestCase(GraphQLTestCase):
             query MyQuery {
                 propertiesOptions {
                     table {
-                        headerLevels {
+                        headerRows {
                             key
                             label
                         }
@@ -29,8 +29,8 @@ class GlobalPropertiesTestCase(GraphQLTestCase):
         """
         response = self.query_check(query)
         self.assertEqual(
-            len(response["data"]["propertiesOptions"]["table"]["headerLevels"]),
-            len(TABLE_HEADER_LEVELS),
+            len(response["data"]["propertiesOptions"]["table"]["headerRows"]),
+            len(TABLE_HEADER_ROWS),
         )
         self.assertEqual(
             len(response["data"]["propertiesOptions"]["table"]["languages"]),

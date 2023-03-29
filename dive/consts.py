@@ -5,7 +5,7 @@ MAX_FILE_SIZE_MB = 10  # 10 MB limit
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 # Zero indexed header levels, users will be displayed 1 indexed option names
-TABLE_HEADER_LEVELS = [
+TABLE_HEADER_ROWS = [
     {
         "key": "0",
         "label": "One",
