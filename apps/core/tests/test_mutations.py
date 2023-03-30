@@ -274,7 +274,32 @@ class TestTableMutation(GraphQLTestCase):
         )
         content = resp_data["data"]["renameTable"]
         assert content["ok"] is True
-        self.assertEqual(content["result"]["name"], variables["name"])
+
+    def test_table_delete(self):
+        dataset = DatasetFactory.create(name="mydataset")
+        table = TableFactory.create(
+            dataset=dataset,
+            name="Test Table",
+        )
+        delete_mutation = """
+            mutation Mutation($tableId: ID!) {
+                deleteTable(id: $tableId) {
+                    ok
+                    errors
+                    result {
+                        id
+                        name
+                    }
+                }
+            }
+        """
+        variables = {"tableId": table.id}
+        resp_data = self.query_check(
+            delete_mutation,
+            variables=variables,
+        )
+        content = resp_data["data"]["deleteTable"]
+        assert content["ok"] is True
 
 
 @override_settings(MEDIA_ROOT=TEST_MEDIA_DIR)

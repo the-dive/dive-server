@@ -3,7 +3,7 @@ from jsonschema import validate, ValidationError as JSONValidationError
 from django.core.exceptions import ValidationError
 
 from dive.consts import (
-    TABLE_HEADER_LEVELS,
+    TABLE_HEADER_ROWS,
     TIMEZONES,
     LANGUAGES,
     JOIN_CLAUSE_OPERATIONS,
@@ -16,7 +16,7 @@ table_properties_schema = {
     "properties": {
         "headerLevel": {
             "type": "string",
-            "enum": [x["key"] for x in TABLE_HEADER_LEVELS],
+            "enum": [x["key"] for x in TABLE_HEADER_ROWS],
         },
         "timezone": {
             "type": "string",

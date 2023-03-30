@@ -299,6 +299,22 @@ class JoinPreviewMutation(graphene.Mutation):
         return JoinPreviewMutation(result=result, errors=None, ok=True)
 
 
+class DeleteTable(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+
+    errors = graphene.List(graphene.NonNull(CustomErrorType))
+    ok = graphene.Boolean()
+    result = graphene.Field(TableType)
+
+    @staticmethod
+    @lift_mutate_with_instance(Table)
+    def mutate(instance, root, info, id):
+        instance.delete()
+        instance.id = id
+        return DeleteTable(result=instance, errors=None, ok=True)
+
+
 class Mutation:
     create_dataset = CreateDataset.Field()
     add_table_to_workspace = AddTableToWorkSpace.Field()
@@ -309,3 +325,4 @@ class Mutation:
     table_action = PerformTableAction.Field()
     table_join = TableJoinMutation.Field()
     join_preview = JoinPreviewMutation.Field()
+    delete_table = DeleteTable.Field()
